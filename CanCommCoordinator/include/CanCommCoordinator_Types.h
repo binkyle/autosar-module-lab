@@ -11,37 +11,42 @@
 extern "C" {
 #endif
 
-/* --- Ignition Mode ------------------------------------------------------ */
-typedef enum
-{
-    CANCOMM_IGN_OFF = 0,
-    CANCOMM_IGN_ON,
-    CANCOMM_IGN_UNKNOWN
-} CanComm_IgnitionModeType;
+/* --- Source Abstraction ------------------------------------------------- */
+/*
+ * Core framework does NOT define concrete source names (IGNITION, PNC_ADAS, etc.).
+ * Source IDs are project-specific and defined in project configuration layers.
+ * The framework only provides the mask mechanism and tool functions.
+ */
 
-/* --- PNC Request -------------------------------------------------------- */
-typedef enum
-{
-    CANCOMM_PNC_NONE = 0,
-    CANCOMM_PNC_GLOBAL,
-    CANCOMM_PNC_ADAS_ONLY,
-    CANCOMM_PNC_INVALID,
-    CANCOMM_PNC_UNKNOWN
-} CanComm_PncRequestType;
+typedef uint16 CanComm_SourceIdType;
 
-/* --- Hold State --------------------------------------------------------- */
-typedef enum
+typedef struct
 {
-    CANCOMM_HOLD_INVALID = 0,
-    CANCOMM_HOLD_VALID
-} CanComm_HoldStateType;
+    uint32 word[CANCOMM_SOURCE_WORD_NUM];
+} CanComm_SourceMaskType;
 
-/* --- Local Keep Awake --------------------------------------------------- */
-typedef enum
+/* --- Source Config (optional, controlled by CANCOMM_ENABLE_SOURCE_CONFIG_TABLE) */
+
+#if (CANCOMM_ENABLE_SOURCE_CONFIG_TABLE == STD_ON)
+
+typedef uint8 CanComm_SourceCategoryType;
+
+#if (CANCOMM_ENABLE_SOURCE_DEBUG_NAME == STD_ON)
+typedef struct
 {
-    CANCOMM_LOCAL_KEEP_NONE = 0,
-    CANCOMM_LOCAL_KEEP_ACTIVE
-} CanComm_LocalKeepAwakeType;
+    CanComm_SourceIdType sourceId;
+    CanComm_SourceCategoryType category;
+    const char* debugName;
+} CanComm_SourceConfigType;
+#else
+typedef struct
+{
+    CanComm_SourceIdType sourceId;
+    CanComm_SourceCategoryType category;
+} CanComm_SourceConfigType;
+#endif
+
+#endif /* CANCOMM_ENABLE_SOURCE_CONFIG_TABLE */
 
 /* --- Tx Gate ------------------------------------------------------------ */
 typedef enum
@@ -59,26 +64,18 @@ typedef enum
     CANCOMM_BSWM_REQUEST_SLEEP_CANDIDATE
 } CanComm_BswMRequestType;
 
-/* --- Fallback Strategy -------------------------------------------------- */
-typedef enum
-{
-    CANCOMM_FALLBACK_ALL_FULL = 0,
-    CANCOMM_FALLBACK_ALL_NO,
-    CANCOMM_FALLBACK_KEEP_LAST
-} CanComm_FallbackStrategyType;
-
 /* --- Channel ID (logical, project-agnostic) ----------------------------- */
 typedef uint8 CanComm_ChannelIdType;
 
 /* --- Input Snapshot ----------------------------------------------------- */
+/*
+ * All inputs are abstracted as a set of active sources.
+ * Concrete source semantics (ignition, PNC, diag, OTA, etc.)
+ * are defined in project configuration, NOT in core types.
+ */
 typedef struct
 {
-    CanComm_IgnitionModeType ignition;
-    CanComm_PncRequestType pncRequest;
-    CanComm_HoldStateType holdState;
-    CanComm_LocalKeepAwakeType localKeepAwake;
-    boolean diagKeepAwake;
-    boolean otaKeepAwake;
+    CanComm_SourceMaskType activeSourceMask;
 } CanComm_InputSnapshotType;
 
 /* --- Output Decision ---------------------------------------------------- */
@@ -126,12 +123,17 @@ typedef struct
 } CanComm_OutputActionSetType;
 
 /* --- Policy Rule -------------------------------------------------------- */
+/*
+ * Generic rule matching based on source masks and priority.
+ * If multiple rules match, the one with highest priority wins.
+ * If priority is equal, the first match in table order wins.
+ */
 typedef struct
 {
-    CanComm_IgnitionModeType ignition;
-    CanComm_PncRequestType pncRequest;
-    CanComm_HoldStateType holdState;
-    CanComm_LocalKeepAwakeType localKeepAwake;
+    uint16 priority;
+    CanComm_SourceMaskType requiredAllMask;   /* Active must contain ALL of these */
+    CanComm_SourceMaskType requiredAnyMask;   /* Active must contain AT LEAST ONE of these (or mask is empty) */
+    CanComm_SourceMaskType forbiddenMask;     /* Active must contain NONE of these */
     const CanComm_OutputActionSetType* actionSet;
 } CanComm_PolicyRuleType;
 

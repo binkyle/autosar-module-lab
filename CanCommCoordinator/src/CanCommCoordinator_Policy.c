@@ -2,6 +2,7 @@
 #include "CanCommCoordinator_Policy.h"
 #include "CanCommCoordinator_Cfg.h"
 #include "CanCommCoordinator_Types.h"
+#include "CanCommCoordinator_SourceMask.h"
 
 /* --- External Config ---------------------------------------------------- */
 extern const CanComm_PolicyRuleType CanComm_PolicyRuleTable[];
@@ -15,39 +16,15 @@ STATIC boolean Policy_MatchRule(
     const CanComm_PolicyRuleType* rule,
     const CanComm_InputSnapshotType* input)
 {
-    /*
-     * Wildcard logic: for some fields, a specific enum value in the rule
-     * means "don't care". Here we use exact match for clarity,
-     * but ignition=ON ignores PNC/hold/local because KL15 ON is highest priority.
-     */
-    if (rule->ignition != input->ignition)
+    if ((rule == NULL_PTR) || (input == NULL_PTR))
     {
         return FALSE;
     }
 
-    /* For KL15 ON, we don't care about other fields (already covered by rule ordering) */
-    if (input->ignition == CANCOMM_IGN_ON)
-    {
-        return TRUE;
-    }
-
-    /* KL15 OFF cases: exact match on PNC, hold, localKeepAwake */
-    if (rule->pncRequest != input->pncRequest)
-    {
-        return FALSE;
-    }
-
-    if (rule->holdState != input->holdState)
-    {
-        return FALSE;
-    }
-
-    if (rule->localKeepAwake != input->localKeepAwake)
-    {
-        return FALSE;
-    }
-
-    return TRUE;
+    return (boolean)(
+        (CanComm_SourceMask_IsAllSet(&input->activeSourceMask, &rule->requiredAllMask) == TRUE) &&
+        (CanComm_SourceMask_IsAnySet(&input->activeSourceMask, &rule->requiredAnyMask) == TRUE) &&
+        (CanComm_SourceMask_IsNoneSet(&input->activeSourceMask, &rule->forbiddenMask) == TRUE));
 }
 
 STATIC void Policy_BuildDecisionFromActionSet(
@@ -122,31 +99,45 @@ Std_ReturnType CanComm_Policy_Evaluate(
     CanComm_OutputDecisionType* decision)
 {
     uint8 i;
+    const CanComm_PolicyRuleType* bestRule = NULL_PTR;
+    uint16 bestPriority = 0u;
+    boolean firstMatch = TRUE;
 
     if ((input == NULL_PTR) || (decision == NULL_PTR))
     {
         return E_NOT_OK;
     }
 
-    /* Iterate policy rule table: first match wins */
+    /* Iterate all rules, find highest-priority match */
     for (i = 0u; i < CanComm_PolicyRuleCount; i++)
     {
         if (Policy_MatchRule(&CanComm_PolicyRuleTable[i], input) == TRUE)
         {
-            const CanComm_OutputActionSetType* actionSet = CanComm_PolicyRuleTable[i].actionSet;
-
-            if (actionSet != NULL_PTR)
+            if ((firstMatch == TRUE) ||
+                (CanComm_PolicyRuleTable[i].priority > bestPriority))
             {
-                Policy_BuildDecisionFromActionSet(actionSet, decision);
+                bestRule = &CanComm_PolicyRuleTable[i];
+                bestPriority = CanComm_PolicyRuleTable[i].priority;
+                firstMatch = FALSE;
             }
-            else
-            {
-                /* Broken config: rule matched but has no actionSet */
-                Policy_ApplyFallback(decision);
-            }
-
-            return E_OK;
         }
+    }
+
+    if (bestRule != NULL_PTR)
+    {
+        const CanComm_OutputActionSetType* actionSet = bestRule->actionSet;
+
+        if (actionSet != NULL_PTR)
+        {
+            Policy_BuildDecisionFromActionSet(actionSet, decision);
+        }
+        else
+        {
+            /* Broken config: rule matched but has no actionSet */
+            Policy_ApplyFallback(decision);
+        }
+
+        return E_OK;
     }
 
     /* No rule matched -> apply configured fallback */

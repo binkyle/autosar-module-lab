@@ -4,6 +4,7 @@
 #include "CanCommCoordinator_State.h"
 #include "CanCommCoordinator_Policy.h"
 #include "CanCommCoordinator_Debug.h"
+#include "CanCommCoordinator_SourceMask.h"
 
 void CanCommCoordinator_App_Init(void)
 {
@@ -24,27 +25,19 @@ void CanCommCoordinator_App_MainFunction(void)
     ret = CanComm_Adapter_BuildInputSnapshot(&input);
     if (ret != E_OK)
     {
-        /* Snapshot incomplete -> safe fallback via Policy */
-        input.ignition = CANCOMM_IGN_UNKNOWN;
-        input.pncRequest = CANCOMM_PNC_UNKNOWN;
-        input.holdState = CANCOMM_HOLD_INVALID;
-        input.localKeepAwake = CANCOMM_LOCAL_KEEP_NONE;
-        input.diagKeepAwake = FALSE;
-        input.otaKeepAwake = FALSE;
+        /* Snapshot incomplete -> safe fallback: empty source mask */
+        CanComm_SourceMask_Clear(&input.activeSourceMask);
     }
 
-    /* Enrich snapshot with runtime state */
-    if (input.ignition == CANCOMM_IGN_OFF)
-    {
-        input.holdState = CanComm_State_GetHoldState();
-    }
+    /* 3. Merge runtime state sources (e.g. hold valid) into snapshot */
+    CanComm_SourceMask_Or(&input.activeSourceMask, CanComm_State_GetActiveSourceMask());
 
-    /* 3. Evaluate policy */
+    /* 4. Evaluate policy */
     (void)CanComm_Policy_Evaluate(&input, &decision);
 
-    /* 4. Apply decision via adapters */
+    /* 5. Apply decision via adapters */
     (void)CanComm_Adapter_ApplyDecision(&decision);
 
-    /* 5. Update debug / trace */
+    /* 6. Update debug / trace */
     CanComm_Debug_Update(&input, &decision);
 }

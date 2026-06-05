@@ -1,5 +1,6 @@
 #include "CanCommCoordinator_Debug.h"
 #include "CanCommCoordinator_Cfg.h"
+#include "CanCommCoordinator_SourceMask.h"
 
 /* --- Private Debug State ------------------------------------------------ */
 typedef struct
@@ -17,12 +18,7 @@ void CanComm_Debug_Init(void)
 {
     CanComm_ChannelIdType ch;
 
-    CanComm_DebugState.lastInput.ignition = CANCOMM_IGN_UNKNOWN;
-    CanComm_DebugState.lastInput.pncRequest = CANCOMM_PNC_UNKNOWN;
-    CanComm_DebugState.lastInput.holdState = CANCOMM_HOLD_INVALID;
-    CanComm_DebugState.lastInput.localKeepAwake = CANCOMM_LOCAL_KEEP_NONE;
-    CanComm_DebugState.lastInput.diagKeepAwake = FALSE;
-    CanComm_DebugState.lastInput.otaKeepAwake = FALSE;
+    CanComm_SourceMask_Clear(&CanComm_DebugState.lastInput.activeSourceMask);
 
     for (ch = 0u; ch < CANCOMM_CH_NUM; ch++)
     {
@@ -46,7 +42,7 @@ void CanComm_Debug_Update(
         return;
     }
 
-    CanComm_DebugState.lastInput = *input;
+    CanComm_SourceMask_Copy(&CanComm_DebugState.lastInput.activeSourceMask, &input->activeSourceMask);
 
     for (ch = 0u; ch < CANCOMM_CH_NUM; ch++)
     {

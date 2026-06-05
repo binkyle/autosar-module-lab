@@ -12,6 +12,19 @@ extern "C" {
 #define CANCOMM_PNC_HOLD_TIME_MS                750u
 #define CANCOMM_PNC_HOLD_TICKS                  (CANCOMM_PNC_HOLD_TIME_MS / CANCOMM_MAIN_PERIOD_MS)
 
+/* --- Source Mask Configuration ------------------------------------------ */
+#define CANCOMM_SOURCE_WORD_NUM             2u
+#define CANCOMM_SOURCE_BITS_PER_WORD        32u
+#define CANCOMM_MAX_SOURCE_NUM              (CANCOMM_SOURCE_WORD_NUM * CANCOMM_SOURCE_BITS_PER_WORD)
+
+/* --- Source Config Table ------------------------------------------------ */
+/* STD_OFF: 不生成 SourceConfigTable，项目仅通过 source id 宏和 PolicyRule mask 工作 */
+#define CANCOMM_ENABLE_SOURCE_CONFIG_TABLE  STD_OFF
+
+/* --- Source Debug Name -------------------------------------------------- */
+/* STD_OFF: 生产代码不引入字符串字面量，避免 ROM 占用 */
+#define CANCOMM_ENABLE_SOURCE_DEBUG_NAME    STD_OFF
+
 /* --- Channel Count ------------------------------------------------------ */
 #define CANCOMM_CH_NUM                          6u
 

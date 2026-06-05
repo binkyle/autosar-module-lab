@@ -1,82 +1,62 @@
 #include "unity.h"
 #include "CanCommCoordinator_State.h"
+#include "CanCommCoordinator_SourceMask.h"
 #include "CanCommCoordinator_Cfg.h"
-#include "CanCommCoordinator_Types.h"
-
-/* GenericMock control API */
-extern void CanComm_Mock_Reset(void);
-
-static void test_state_setup(void)
-{
-    CanComm_Mock_Reset();
-    CanComm_State_Init();
-}
-
-/* --- State Tests -------------------------------------------------------- */
 
 void test_state_init_default(void)
 {
-    test_state_setup();
-    const CanComm_RuntimeStateType* state = CanComm_State_Get();
+    CanComm_ChannelIdType ch;
+    const CanComm_RuntimeStateType* state;
 
-    TEST_ASSERT_EQUAL_HEX8(CANCOMM_PNC_NONE, state->lastPncRequest);
-    TEST_ASSERT_EQUAL_HEX8(CANCOMM_HOLD_INVALID, state->holdState);
+    CanComm_State_Init();
+    state = CanComm_State_Get();
+
+    TEST_ASSERT_TRUE(CanComm_SourceMask_IsEmpty(&state->activeSourceMask));
     TEST_ASSERT_EQUAL_UINT16(0u, state->holdTimerTicks);
+
+    for (ch = 0u; ch < CANCOMM_CH_NUM; ch++)
+    {
+        TEST_ASSERT_EQUAL_HEX8(COMM_NO_COMMUNICATION, state->lastDecision.targetComMode[ch]);
+        TEST_ASSERT_EQUAL_HEX8(CANCOMM_TX_BLOCK, state->lastDecision.targetTxGate[ch]);
+        TEST_ASSERT_EQUAL_HEX8(COMM_NO_COMMUNICATION, state->lastAppliedMode[ch]);
+    }
 }
 
-void test_state_on_pnc_request_reload_hold_timer(void)
+void test_state_on_source_active_sets_bit(void)
 {
-    test_state_setup();
-    CanComm_State_OnPncRequest(CANCOMM_PNC_ADAS_ONLY);
+    CanComm_State_Init();
+    CanComm_State_OnSourceActive(5u);
 
-    const CanComm_RuntimeStateType* state = CanComm_State_Get();
+    const CanComm_SourceMaskType* mask = CanComm_State_GetActiveSourceMask();
+    TEST_ASSERT_TRUE(CanComm_SourceMask_IsSet(mask, 5u));
+}
 
-    TEST_ASSERT_EQUAL_HEX8(CANCOMM_PNC_ADAS_ONLY, state->lastPncRequest);
-    TEST_ASSERT_EQUAL_HEX8(CANCOMM_HOLD_VALID, state->holdState);
-    TEST_ASSERT_EQUAL_UINT16(CANCOMM_PNC_HOLD_TICKS, state->holdTimerTicks);
+void test_state_on_source_inactive_clears_bit(void)
+{
+    CanComm_State_Init();
+    CanComm_State_OnSourceActive(5u);
+    CanComm_State_OnSourceInactive(5u);
+
+    const CanComm_SourceMaskType* mask = CanComm_State_GetActiveSourceMask();
+    TEST_ASSERT_FALSE(CanComm_SourceMask_IsSet(mask, 5u));
 }
 
 void test_state_tick_to_timeout(void)
 {
-    uint16 i;
+    CanComm_State_Init();
 
-    test_state_setup();
-    CanComm_State_OnPncRequest(CANCOMM_PNC_GLOBAL);
-    TEST_ASSERT_EQUAL_HEX8(CANCOMM_HOLD_VALID, CanComm_State_GetHoldState());
+    /* Activate a PNC source (id 1) which reloads hold timer */
+    CanComm_State_OnSourceActive(1u);
+    TEST_ASSERT_TRUE(CanComm_SourceMask_IsSet(CanComm_State_GetActiveSourceMask(), 6u));
 
     /* Tick until timeout */
+    uint16 i;
     for (i = 0u; i < CANCOMM_PNC_HOLD_TICKS; i++)
     {
         CanComm_State_Tick();
     }
 
-    TEST_ASSERT_EQUAL_HEX8(CANCOMM_HOLD_INVALID, CanComm_State_GetHoldState());
-}
-
-void test_state_hold_valid_before_timeout(void)
-{
-    test_state_setup();
-    CanComm_State_OnPncRequest(CANCOMM_PNC_ADAS_ONLY);
-
-    /* Tick one less than timeout */
-    CanComm_State_Tick();
-
-    TEST_ASSERT_EQUAL_HEX8(CANCOMM_HOLD_VALID, CanComm_State_GetHoldState());
-}
-
-void test_state_hold_invalid_after_timeout(void)
-{
-    uint16 i;
-
-    test_state_setup();
-    CanComm_State_OnPncRequest(CANCOMM_PNC_GLOBAL);
-
-    for (i = 0u; i <= CANCOMM_PNC_HOLD_TICKS; i++)
-    {
-        CanComm_State_Tick();
-    }
-
-    TEST_ASSERT_EQUAL_HEX8(CANCOMM_HOLD_INVALID, CanComm_State_GetHoldState());
+    TEST_ASSERT_FALSE(CanComm_SourceMask_IsSet(CanComm_State_GetActiveSourceMask(), 6u));
 }
 
 void test_state_exclusive_area_called(void)
@@ -84,7 +64,7 @@ void test_state_exclusive_area_called(void)
     extern boolean CanComm_Mock_GetExclusiveAreaEntered(void);
     extern boolean CanComm_Mock_GetExclusiveAreaExited(void);
 
-    test_state_setup();
+    CanComm_State_Init();
 
     TEST_ASSERT_TRUE(CanComm_Mock_GetExclusiveAreaEntered());
     TEST_ASSERT_TRUE(CanComm_Mock_GetExclusiveAreaExited());
@@ -99,22 +79,11 @@ void test_state_null_pointer_get(void)
 
 void test_state_on_pnc_invalid_does_not_reload(void)
 {
-    test_state_setup();
+    CanComm_State_Init();
 
-    CanComm_State_OnPncRequest(CANCOMM_PNC_INVALID);
-
-    const CanComm_RuntimeStateType* state = CanComm_State_Get();
-    TEST_ASSERT_EQUAL_HEX8(CANCOMM_HOLD_INVALID, state->holdState);
-    TEST_ASSERT_EQUAL_UINT16(0u, state->holdTimerTicks);
-}
-
-void test_state_on_pnc_unknown_does_not_reload(void)
-{
-    test_state_setup();
-
-    CanComm_State_OnPncRequest(CANCOMM_PNC_UNKNOWN);
+    /* Activate an unrelated source (not PNC) */
+    CanComm_State_OnSourceActive(10u);
 
     const CanComm_RuntimeStateType* state = CanComm_State_Get();
-    TEST_ASSERT_EQUAL_HEX8(CANCOMM_HOLD_INVALID, state->holdState);
     TEST_ASSERT_EQUAL_UINT16(0u, state->holdTimerTicks);
 }

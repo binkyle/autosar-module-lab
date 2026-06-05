@@ -1,6 +1,7 @@
 #include "CanCommCoordinator_Adapter.h"
 #include "CanCommCoordinator_Cfg.h"
 #include "CanCommCoordinator_Types.h"
+#include "CanCommCoordinator_SourceMask.h"
 
 /*
  * Generic Mock Adapter for Host Unit Testing
@@ -12,11 +13,7 @@
 /* --- Test-Settable Mock State ------------------------------------------- */
 typedef struct
 {
-    CanComm_IgnitionModeType ignition;
-    CanComm_PncRequestType pncRequest;
-    CanComm_LocalKeepAwakeType localKeepAwake;
-    boolean diagKeepAwake;
-    boolean otaKeepAwake;
+    CanComm_SourceMaskType activeSourceMask;
 
     ComM_ModeType requestedMode[CANCOMM_CH_NUM];
     uint8 requestComModeCallCount[CANCOMM_CH_NUM];
@@ -35,11 +32,7 @@ void CanComm_Mock_Reset(void)
 {
     CanComm_ChannelIdType ch;
 
-    CanComm_MockState.ignition = CANCOMM_IGN_UNKNOWN;
-    CanComm_MockState.pncRequest = CANCOMM_PNC_UNKNOWN;
-    CanComm_MockState.localKeepAwake = CANCOMM_LOCAL_KEEP_NONE;
-    CanComm_MockState.diagKeepAwake = FALSE;
-    CanComm_MockState.otaKeepAwake = FALSE;
+    CanComm_SourceMask_Clear(&CanComm_MockState.activeSourceMask);
 
     for (ch = 0u; ch < CANCOMM_CH_NUM; ch++)
     {
@@ -53,29 +46,24 @@ void CanComm_Mock_Reset(void)
     CanComm_MockState.exclusiveAreaExited = FALSE;
 }
 
-void CanComm_Mock_SetIgnition(CanComm_IgnitionModeType ignition)
+void CanComm_Mock_SetSourceActive(CanComm_SourceIdType sourceId)
 {
-    CanComm_MockState.ignition = ignition;
+    (void)CanComm_SourceMask_Set(&CanComm_MockState.activeSourceMask, sourceId);
 }
 
-void CanComm_Mock_SetPncRequest(CanComm_PncRequestType pnc)
+void CanComm_Mock_SetSourceInactive(CanComm_SourceIdType sourceId)
 {
-    CanComm_MockState.pncRequest = pnc;
+    (void)CanComm_SourceMask_Reset(&CanComm_MockState.activeSourceMask, sourceId);
 }
 
-void CanComm_Mock_SetLocalKeepAwake(CanComm_LocalKeepAwakeType keep)
+void CanComm_Mock_ClearAllSources(void)
 {
-    CanComm_MockState.localKeepAwake = keep;
+    CanComm_SourceMask_Clear(&CanComm_MockState.activeSourceMask);
 }
 
-void CanComm_Mock_SetDiagKeepAwake(boolean active)
+const CanComm_SourceMaskType* CanComm_Mock_GetActiveSourceMask(void)
 {
-    CanComm_MockState.diagKeepAwake = active;
-}
-
-void CanComm_Mock_SetOtaKeepAwake(boolean active)
-{
-    CanComm_MockState.otaKeepAwake = active;
+    return &CanComm_MockState.activeSourceMask;
 }
 
 ComM_ModeType CanComm_Mock_GetRequestedMode(CanComm_ChannelIdType ch)
@@ -116,21 +104,7 @@ boolean CanComm_Mock_GetExclusiveAreaExited(void)
     return CanComm_MockState.exclusiveAreaExited;
 }
 
-/* --- Adapter Implementation (overrides weak stubs) ---------------------- */
-
-Std_ReturnType CanComm_Adapter_GetIgnition(
-    CanComm_IgnitionModeType* ignition)
-{
-    *ignition = CanComm_MockState.ignition;
-    return E_OK;
-}
-
-Std_ReturnType CanComm_Adapter_GetPncRequest(
-    CanComm_PncRequestType* pncRequest)
-{
-    *pncRequest = CanComm_MockState.pncRequest;
-    return E_OK;
-}
+/* --- Adapter Implementation --------------------------------------------- */
 
 Std_ReturnType CanComm_Adapter_GetComMode(
     CanComm_ChannelIdType ch,
@@ -165,27 +139,6 @@ Std_ReturnType CanComm_Adapter_RequestBswMMode(
     return E_OK;
 }
 
-Std_ReturnType CanComm_Adapter_GetLocalKeepAwake(
-    CanComm_LocalKeepAwakeType* keepAwake)
-{
-    *keepAwake = CanComm_MockState.localKeepAwake;
-    return E_OK;
-}
-
-Std_ReturnType CanComm_Adapter_GetDiagKeepAwake(
-    boolean* diagKeepAwake)
-{
-    *diagKeepAwake = CanComm_MockState.diagKeepAwake;
-    return E_OK;
-}
-
-Std_ReturnType CanComm_Adapter_GetOtaKeepAwake(
-    boolean* otaKeepAwake)
-{
-    *otaKeepAwake = CanComm_MockState.otaKeepAwake;
-    return E_OK;
-}
-
 void CanComm_Adapter_EnterExclusiveArea(void)
 {
     CanComm_MockState.exclusiveAreaEntered = TRUE;
@@ -196,7 +149,7 @@ void CanComm_Adapter_ExitExclusiveArea(void)
     CanComm_MockState.exclusiveAreaExited = TRUE;
 }
 
-/* --- Snapshot Builder (override) ---------------------------------------- */
+/* --- Snapshot Builder --------------------------------------------------- */
 
 Std_ReturnType CanComm_Adapter_BuildInputSnapshot(
     CanComm_InputSnapshotType* snapshot)
@@ -206,17 +159,11 @@ Std_ReturnType CanComm_Adapter_BuildInputSnapshot(
         return E_NOT_OK;
     }
 
-    snapshot->ignition = CanComm_MockState.ignition;
-    snapshot->pncRequest = CanComm_MockState.pncRequest;
-    snapshot->holdState = CANCOMM_HOLD_INVALID;
-    snapshot->localKeepAwake = CanComm_MockState.localKeepAwake;
-    snapshot->diagKeepAwake = CanComm_MockState.diagKeepAwake;
-    snapshot->otaKeepAwake = CanComm_MockState.otaKeepAwake;
-
+    CanComm_SourceMask_Copy(&snapshot->activeSourceMask, &CanComm_MockState.activeSourceMask);
     return E_OK;
 }
 
-/* --- Decision Application (override) ------------------------------------ */
+/* --- Decision Application ----------------------------------------------- */
 
 Std_ReturnType CanComm_Adapter_ApplyDecision(
     const CanComm_OutputDecisionType* decision)

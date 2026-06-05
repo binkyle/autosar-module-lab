@@ -56,23 +56,86 @@ static const CanComm_OutputActionSetType CanComm_ActionAdasOnly =
 
 Policy 引擎在运行时根据 `ActionSet.mask` + `ChannelConfig.channelMask` 自动生成每个通道的 `OutputDecision`。
 
+## SourceMask 配置
+
+### 配置 Source 数量
+
+编辑 `include/CanCommCoordinator_Cfg.h`：
+
+```c
+#define CANCOMM_SOURCE_WORD_NUM          2u   /* 2 words = 64 sources */
+#define CANCOMM_SOURCE_BITS_PER_WORD     32u
+#define CANCOMM_MAX_SOURCE_NUM           (CANCOMM_SOURCE_WORD_NUM * CANCOMM_SOURCE_BITS_PER_WORD)
+```
+
+如需支持超过 64 个 source，增加 `CANCOMM_SOURCE_WORD_NUM` 即可，核心代码无需修改。
+
+### 可选功能开关
+
+```c
+#define CANCOMM_ENABLE_SOURCE_CONFIG_TABLE  STD_OFF  /* SourceConfigTable（调试/诊断用） */
+#define CANCOMM_ENABLE_SOURCE_DEBUG_NAME    STD_OFF  /* source 名称字符串（调试/日志用） */
+```
+
+默认 `STD_OFF`，以节省 ROM。如需在运行时查看 source 名称或配置属性，可设为 `STD_ON`。
+
+### 在项目层定义 Source ID
+
+核心框架**不定义**具体 source 语义。项目层在 `src/CanCommCoordinator_Cfg.c` 中自行分配 ID：
+
+```c
+#define CANCOMM_SRC_ID_IGNITION         0u
+#define CANCOMM_SRC_ID_PNC_GLOBAL       1u
+#define CANCOMM_SRC_ID_PNC_ADAS         2u
+#define CANCOMM_SRC_ID_DIAG_KEEP        3u
+#define CANCOMM_SRC_ID_OTA_KEEP         4u
+#define CANCOMM_SRC_ID_LOCAL_KEEP       5u
+#define CANCOMM_SRC_ID_HOLD_VALID       6u
+```
+
 ## 如何配置 PolicyRule
 
-规则表按 **first match wins** 顺序排列。建议：
-1. 最具体的规则放前面
-2. catch-all / fallback 由引擎处理
+规则表使用 **priority + mask** 模型。引擎选择 **priority 最高**的匹配规则；priority 相同则表中靠前的优先。
 
-每个规则指向一个 `CanComm_OutputActionSetType`：
+每个规则包含：
+
+| 字段 | 说明 |
+|------|------|
+| `priority` | 优先级，数值越大越优先 |
+| `requiredAllMask` | active source mask 必须包含的全部 bit |
+| `requiredAnyMask` | active source mask 至少包含一个 bit（空则自动满足） |
+| `forbiddenMask` | active source mask 不能包含的任何 bit |
+| `actionSet` | 指向 `CanComm_OutputActionSetType` |
+
+示例：
 
 ```c
 const CanComm_PolicyRuleType CanComm_PolicyRuleTable[] =
 {
+    /* IGNITION ON -> all FULL (priority 100) */
     {
-        .ignition = CANCOMM_IGN_OFF,
-        .pncRequest = CANCOMM_PNC_ADAS_ONLY,
-        .holdState = CANCOMM_HOLD_VALID,
-        .localKeepAwake = CANCOMM_LOCAL_KEEP_NONE,
-        .actionSet = &CanComm_ActionAdasOnly
+        .priority       = 100u,
+        .requiredAllMask.word = { SRC_MASK(CANCOMM_SRC_ID_IGNITION), 0u },
+        .requiredAnyMask.word = { 0u, 0u },
+        .forbiddenMask.word   = { 0u, 0u },
+        .actionSet      = &CanComm_ActionAllFull
+    },
+    /* PNC_GLOBAL + HOLD_VALID -> all FULL (priority 90) */
+    {
+        .priority       = 90u,
+        .requiredAllMask.word = { SRC_MASK(CANCOMM_SRC_ID_PNC_GLOBAL)
+                                  | SRC_MASK(CANCOMM_SRC_ID_HOLD_VALID), 0u },
+        .requiredAnyMask.word = { 0u, 0u },
+        .forbiddenMask.word   = { 0u, 0u },
+        .actionSet      = &CanComm_ActionAllFull
+    },
+    /* catch-all: no active sources -> all NO (priority 0) */
+    {
+        .priority       = 0u,
+        .requiredAllMask.word = { 0u, 0u },
+        .requiredAnyMask.word = { 0u, 0u },
+        .forbiddenMask.word   = { 0xFFFFFFFFu, 0xFFFFFFFFu }, /* 只在空 mask 时匹配 */
+        .actionSet      = &CanComm_ActionAllNo
     }
 };
 ```
@@ -85,7 +148,7 @@ Fallback 是一个 `CanComm_OutputActionSetType` 指针：
 const CanComm_OutputActionSetType* const CanComm_FallbackActionSet = &CanComm_ActionAllFull;
 ```
 
-当没有规则匹配时，Policy 引擎使用此 ActionSet 生成 OutputDecision。
+当没有规则匹配时（例如输入包含未在任何规则中定义的 source 组合），Policy 引擎使用此 ActionSet 生成 OutputDecision。Fallback 是最终安全网，建议配置为保守状态（如全部 FULL）。
 
 ## 如何接入 BSW
 

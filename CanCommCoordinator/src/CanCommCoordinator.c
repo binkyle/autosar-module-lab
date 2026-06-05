@@ -33,7 +33,6 @@ void CanCommCoordinator_OnNmRxIndication(
     boolean pni = FALSE;
     boolean pncGlobal = FALSE;
     boolean pncAdas = FALSE;
-    CanComm_PncRequestType pncRequest = CANCOMM_PNC_NONE;
     uint8 pniByte;
     uint8 pncGlobalByte;
     uint8 pncAdasByte;
@@ -69,20 +68,18 @@ void CanCommCoordinator_OnNmRxIndication(
     {
         if ((pncGlobal == FALSE) && (pncAdas == TRUE))
         {
-            pncRequest = CANCOMM_PNC_ADAS_ONLY;
+            CanComm_State_OnSourceActive(2u); /* PNC_ADAS, project-configured source id */
         }
         else
         {
-            pncRequest = CANCOMM_PNC_GLOBAL;
+            CanComm_State_OnSourceActive(1u); /* PNC_GLOBAL, project-configured source id */
         }
     }
     else
     {
-        pncRequest = CANCOMM_PNC_NONE;
+        CanComm_State_OnSourceInactive(1u); /* PNC_GLOBAL */
+        CanComm_State_OnSourceInactive(2u); /* PNC_ADAS */
     }
-
-    /* Feed into state machine */
-    CanComm_State_OnPncRequest(pncRequest);
 
     /* Optionally notify adapter for immediate processing */
     /* CanComm_Adapter_OnNmRxIndication(rxPduId, pduInfo); */

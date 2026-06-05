@@ -2,16 +2,17 @@
 
 ## 模块用途
 
-`CanCommCoordinator` 是项目级 **CAN 通信策略协调模块**。它根据 KL15、PNC、NM、ComM、PowerMode、本地保持源等输入，计算目标通信策略，并通过标准 BSW 接口输出决策。
+`CanCommCoordinator` 是项目级 **CAN 通信策略协调模块**。它根据各通信保持源（如 KL15、PNC、Diag、OTA 等）的激活状态，计算目标通信策略，并通过标准 BSW 接口输出决策。
 
-该模块不是 `CanServer` 的复刻，而是一个可配置、可测试、可迁移、BSW 优先的通信策略协调模块模板。
+该模块不是 `CanServer` 的复刻，而是一个可配置、可测试、可迁移、BSW 优先的通信策略协调模块模板。核心框架通过 **SourceMask（multi-word bitset）** 统一管理输入源，不耦合任何项目具体的 source 语义。
 
 ## 适用场景
 
-- 需要基于 KL15 ON/OFF 切换通信模式的系统
+- 需要基于多源输入（KL15、PNC、Diag、OTA、LocalKeep 等）协调通信模式的系统
 - 需要处理 ADAS-only PN / Global PN / PNC 策略的系统
 - 需要从旧 `CanServer` 迁移到标准 AUTOSAR BSW 架构的项目
 - 需要 host 单元测试验证通信策略的项目
+- 需要支持超过 32 个通信保持源的系统（通过 `CANCOMM_SOURCE_WORD_NUM` 配置）
 
 ## 限制
 
@@ -19,6 +20,8 @@
 - Legacy NM Parse 兼容模式 **默认关闭（STD_OFF）**，仅用于迁移期，长期应由 CanNm/ComM/BswM 接管
 - 750ms hold timer 是项目兼容逻辑，非 AUTOSAR 标准 timer
 - Adapter 实现由构建系统选择（GenericMock / VectorAdapter），**不使用 weak symbol** 以保证跨编译器可移植性
+- 核心框架**不定义**具体 source 名称（IGNITION/PNC/DIAG 等），仅项目配置层（`Cfg.c`）定义
+- `SourceConfigTable` 和 `debugName` 默认通过条件编译关闭（`STD_OFF`），以节省 ROM
 
 ## 测试方案说明
 

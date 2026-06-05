@@ -73,9 +73,9 @@ BSW 不能完整表达的项目组合策略，才放到 CanCommCoordinator；
 
 ## 核心数据流
 
-1. **Input Gathering**: Adapter 从外部获取 KL15、PNC、LocalKeepAwake 等信号
-2. **Snapshot Build**: App 层将输入组装为 `CanComm_InputSnapshotType`
-3. **Policy Evaluate**: 查表引擎根据输入匹配规则，得到 `CanComm_OutputActionSetType`
+1. **Input Gathering**: Adapter 从外部获取各通信保持源（如 KL15、PNC、Diag、OTA 等）的激活状态
+2. **Snapshot Build**: App 层将输入组装为 `CanComm_InputSnapshotType`，内部使用 `CanComm_SourceMaskType`（multi-word bitset）表示激活源集合
+3. **Policy Evaluate**: 查表引擎根据 `priority + requiredAllMask + requiredAnyMask + forbiddenMask` 匹配最佳规则，得到 `CanComm_OutputActionSetType`
 4. **Decision Build**: Policy 引擎根据 `ActionSet.mask` + `ChannelConfig.channelMask` 生成 `CanComm_OutputDecisionType`
 5. **Decision Apply**: Adapter 将决策转换为 ComM_RequestComMode、BswM_RequestMode 等调用
 6. **Debug Update**: 记录最近一次输入与决策，用于诊断
@@ -106,12 +106,58 @@ BSW 不能完整表达的项目组合策略，才放到 CanCommCoordinator；
 - 策略逻辑与 BSW 调用混杂，难以维护和审计
 - 长期直接持有 `Com_IpduGroupStart/Stop`、`Nm_Enable/DisableCommunication` 等本应由 BswM 管理的调用
 
+## SourceMask 框架设计
+
+### 为什么引入 SourceMask
+
+旧设计使用显式枚举字段（`ignition`、`pncRequest`、`holdState` 等），导致：
+- 每新增一个 source 都要修改核心类型定义
+- 核心代码耦合项目具体的 source 语义（IGNITION、PNC_ADAS、DIAG 等）
+- 最多只能支持 32 个 source（单个 `uint32`）
+
+新设计使用 **multi-word bitset**：
+```c
+typedef struct {
+    uint32 word[CANCOMM_SOURCE_WORD_NUM];
+} CanComm_SourceMaskType;
+```
+
+- **核心框架零 source 语义**：IGNITION/PNC/DIAG/OTA 等名称只出现在项目配置层（`Cfg.c`）
+- **可扩展**：通过 `CANCOMM_SOURCE_WORD_NUM`（默认 2 words = 64 sources）自由配置 source 数量
+- **统一接口**：所有 source 通过 `CanComm_SourceMask_Set/Reset/IsSet` 操作，无特化字段
+
+### SourceMask 与 Policy 的关系
+
+Policy 规则使用三个 mask 描述匹配条件：
+
+| Mask | 语义 | 空 mask 行为 |
+|------|------|-------------|
+| `requiredAllMask` | active 必须包含全部 bit | 空 = 自动满足 |
+| `requiredAnyMask` | active 至少包含一个 bit | 空 = 自动满足 |
+| `forbiddenMask` | active 不能包含任何 bit | 空 = 自动满足 |
+
+引擎选择 **priority 最高**的匹配规则；priority 相同则表中靠前的优先。无匹配时触发 `FallbackActionSet`。
+
+### 可选配置项
+
+通过条件编译控制：
+
+```c
+#define CANCOMM_ENABLE_SOURCE_CONFIG_TABLE  STD_OFF  /* SourceConfigTable 是否编译进镜像 */
+#define CANCOMM_ENABLE_SOURCE_DEBUG_NAME    STD_OFF  /* debugName 字符串是否进入结构体 */
+```
+
+默认均为 `STD_OFF`，以节省 ROM。
+
 ## 状态机设计
 
 ```text
 [Init] --init--> [Idle]
-[Idle] --OnNmRxIndication--> [Hold Valid] (reload timer)
-[Hold Valid] --tick/timeout--> [Hold Invalid]
-[Hold Valid] --KL15 ON--> [All Full]
-[Hold Invalid] + no local keep --> [All No / Sleep Candidate]
+[Idle] --OnSourceActive(src)--> 设置 SourceMask bit
+[Idle] --OnSourceInactive(src)--> 清除 SourceMask bit
+[Hold Valid] --tick/timeout--> 清除 HOLD_VALID bit
+[SourceMask empty] + no rule match --> Fallback (safe FULL)
+[SourceMask empty] --> catch-all rule (All No / Sleep Candidate)
 ```
+
+State 层管理 `HOLD_VALID` source（id 由项目配置），PNC source 激活时启动 timer，超时后自动清除对应的 source bit。

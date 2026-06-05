@@ -1,12 +1,13 @@
 #include "CanCommCoordinator_Adapter.h"
 #include "CanCommCoordinator_Cfg.h"
 #include "CanCommCoordinator_Types.h"
+#include "CanCommCoordinator_SourceMask.h"
 #include "SchM_CanCommCoordinator.h"
 
-/* --- Default Stubs (intentionally fail at link-time if not overridden) -- */
+/* --- Default Stubs (intentionally minimal, project layer overrides) ----- */
 /*
- * This file provides the default exclusive-area helpers ONLY.
- * All other Adapter functions MUST be provided by either:
+ * This file provides default exclusive-area helpers and skeleton Adapter logic.
+ * BuildInputSnapshot / ApplyDecision MAY be overridden by:
  *   - project/vector/CanCommCoordinator_VectorAdapter.c  (Vector target)
  *   - project/generic/CanCommCoordinator_GenericMock.c   (host test)
  *
@@ -24,47 +25,21 @@ void CanComm_Adapter_ExitExclusiveArea(void)
     SchM_Exit_CanCommCoordinator_CanCommExclusiveArea();
 }
 
-/* --- Snapshot Builder (default implementation, calls concrete adapters) - */
+/* --- Snapshot Builder (default: empty source mask, safe fallback) ------- */
 
 Std_ReturnType CanComm_Adapter_BuildInputSnapshot(
     CanComm_InputSnapshotType* snapshot)
 {
-    Std_ReturnType ret = E_OK;
-
     if (snapshot == NULL_PTR)
     {
         return E_NOT_OK;
     }
 
-    snapshot->ignition = CANCOMM_IGN_UNKNOWN;
-    snapshot->pncRequest = CANCOMM_PNC_UNKNOWN;
-    snapshot->holdState = CANCOMM_HOLD_INVALID;
-    snapshot->localKeepAwake = CANCOMM_LOCAL_KEEP_NONE;
-    snapshot->diagKeepAwake = FALSE;
-    snapshot->otaKeepAwake = FALSE;
-
-    if (CanComm_Adapter_GetIgnition(&snapshot->ignition) != E_OK)
-    {
-        ret = E_NOT_OK;
-    }
-
-    if (CanComm_Adapter_GetPncRequest(&snapshot->pncRequest) != E_OK)
-    {
-        ret = E_NOT_OK;
-    }
-
-    if (CanComm_Adapter_GetLocalKeepAwake(&snapshot->localKeepAwake) != E_OK)
-    {
-        ret = E_NOT_OK;
-    }
-
-    (void)CanComm_Adapter_GetDiagKeepAwake(&snapshot->diagKeepAwake);
-    (void)CanComm_Adapter_GetOtaKeepAwake(&snapshot->otaKeepAwake);
-
-    return ret;
+    CanComm_SourceMask_Clear(&snapshot->activeSourceMask);
+    return E_OK;
 }
 
-/* --- Decision Application (default implementation, calls concrete adapters) */
+/* --- Decision Application (default implementation) ---------------------- */
 
 Std_ReturnType CanComm_Adapter_ApplyDecision(
     const CanComm_OutputDecisionType* decision)

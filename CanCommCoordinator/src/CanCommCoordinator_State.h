@@ -11,8 +11,7 @@ extern "C" {
 /* --- Runtime State ------------------------------------------------------ */
 typedef struct
 {
-    CanComm_PncRequestType lastPncRequest;
-    CanComm_HoldStateType holdState;
+    CanComm_SourceMaskType activeSourceMask;  /* Sources managed by State layer */
     uint16 holdTimerTicks;
     CanComm_OutputDecisionType lastDecision;
     ComM_ModeType lastAppliedMode[CANCOMM_CH_NUM];
@@ -22,8 +21,9 @@ typedef struct
 
 extern void CanComm_State_Init(void);
 extern void CanComm_State_Tick(void);
-extern void CanComm_State_OnPncRequest(CanComm_PncRequestType pncRequest);
-extern CanComm_HoldStateType CanComm_State_GetHoldState(void);
+extern void CanComm_State_OnSourceActive(CanComm_SourceIdType sourceId);
+extern void CanComm_State_OnSourceInactive(CanComm_SourceIdType sourceId);
+extern const CanComm_SourceMaskType* CanComm_State_GetActiveSourceMask(void);
 extern const CanComm_RuntimeStateType* CanComm_State_Get(void);
 
 #ifdef __cplusplus

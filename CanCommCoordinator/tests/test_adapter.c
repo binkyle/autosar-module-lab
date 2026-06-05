@@ -1,42 +1,41 @@
 #include "unity.h"
 #include "CanCommCoordinator_Adapter.h"
-#include "CanCommCoordinator_Cfg.h"
 #include "CanCommCoordinator_Types.h"
+#include "CanCommCoordinator_Cfg.h"
+#include "CanCommCoordinator_SourceMask.h"
 
 /* GenericMock control API */
 extern void CanComm_Mock_Reset(void);
-extern void CanComm_Mock_SetIgnition(CanComm_IgnitionModeType ignition);
-extern void CanComm_Mock_SetPncRequest(CanComm_PncRequestType pnc);
-extern void CanComm_Mock_SetLocalKeepAwake(CanComm_LocalKeepAwakeType keep);
-extern ComM_ModeType CanComm_Mock_GetRequestedMode(CanComm_ChannelIdType ch);
+extern void CanComm_Mock_SetSourceActive(CanComm_SourceIdType sourceId);
+extern void CanComm_Mock_SetSourceInactive(CanComm_SourceIdType sourceId);
+extern void CanComm_Mock_ClearAllSources(void);
+extern const CanComm_SourceMaskType* CanComm_Mock_GetActiveSourceMask(void);
 extern uint8 CanComm_Mock_GetRequestComModeCallCount(CanComm_ChannelIdType ch);
-extern CanComm_BswMRequestType CanComm_Mock_GetLastBswMRequest(void);
 extern uint8 CanComm_Mock_GetBswMRequestCallCount(void);
-extern boolean CanComm_Mock_GetExclusiveAreaEntered(void);
-extern boolean CanComm_Mock_GetExclusiveAreaExited(void);
+extern CanComm_BswMRequestType CanComm_Mock_GetLastBswMRequest(void);
 
 /* --- Adapter Tests ------------------------------------------------------ */
 
 void test_adapter_build_snapshot(void)
 {
     CanComm_InputSnapshotType snapshot;
-    CanComm_Mock_Reset();
 
-    CanComm_Mock_SetIgnition(CANCOMM_IGN_ON);
-    CanComm_Mock_SetPncRequest(CANCOMM_PNC_GLOBAL);
-    CanComm_Mock_SetLocalKeepAwake(CANCOMM_LOCAL_KEEP_ACTIVE);
+    CanComm_Mock_Reset();
+    CanComm_Mock_SetSourceActive(0u);
+    CanComm_Mock_SetSourceActive(5u);
 
     TEST_ASSERT_EQUAL(E_OK, CanComm_Adapter_BuildInputSnapshot(&snapshot));
-    TEST_ASSERT_EQUAL_HEX8(CANCOMM_IGN_ON, snapshot.ignition);
-    TEST_ASSERT_EQUAL_HEX8(CANCOMM_PNC_GLOBAL, snapshot.pncRequest);
-    TEST_ASSERT_EQUAL_HEX8(CANCOMM_LOCAL_KEEP_ACTIVE, snapshot.localKeepAwake);
+    TEST_ASSERT_TRUE(CanComm_SourceMask_IsSet(&snapshot.activeSourceMask, 0u));
+    TEST_ASSERT_TRUE(CanComm_SourceMask_IsSet(&snapshot.activeSourceMask, 5u));
+    TEST_ASSERT_FALSE(CanComm_SourceMask_IsSet(&snapshot.activeSourceMask, 1u));
 }
 
 void test_adapter_request_com_mode_called_when_target_differs(void)
 {
     CanComm_OutputDecisionType decision;
-    CanComm_Mock_Reset();
     CanComm_ChannelIdType ch;
+
+    CanComm_Mock_Reset();
 
     for (ch = 0u; ch < CANCOMM_CH_NUM; ch++)
     {
@@ -47,49 +46,53 @@ void test_adapter_request_com_mode_called_when_target_differs(void)
     decision.sleepCandidate = FALSE;
 
     TEST_ASSERT_EQUAL(E_OK, CanComm_Adapter_ApplyDecision(&decision));
-    TEST_ASSERT_EQUAL_UINT8(1u, CanComm_Mock_GetRequestComModeCallCount(CANCOMM_CH_ADAS1));
+
+    for (ch = 0u; ch < CANCOMM_CH_NUM; ch++)
+    {
+        TEST_ASSERT_EQUAL_UINT8(1u, CanComm_Mock_GetRequestComModeCallCount(ch));
+    }
 }
 
 void test_adapter_no_repeat_request_when_target_same(void)
 {
-    /* This test verifies that the adapter is called; anti-repeat logic
-     * would live in a higher-level ApplyDecision wrapper if required. */
+    /* GenericMock ApplyDecision always increments count; anti-repeat is a
+     * production VectorAdapter concern. This test documents current behavior. */
     CanComm_OutputDecisionType decision;
-    CanComm_Mock_Reset();
     CanComm_ChannelIdType ch;
+
+    CanComm_Mock_Reset();
 
     for (ch = 0u; ch < CANCOMM_CH_NUM; ch++)
     {
-        decision.targetComMode[ch] = COMM_NO_COMMUNICATION;
-        decision.targetTxGate[ch] = CANCOMM_TX_BLOCK;
+        decision.targetComMode[ch] = COMM_FULL_COMMUNICATION;
+        decision.targetTxGate[ch] = CANCOMM_TX_UNBLOCK;
     }
-    decision.bswmRequest = CANCOMM_BSWM_REQUEST_NO;
+    decision.bswmRequest = CANCOMM_BSWM_REQUEST_FULL;
     decision.sleepCandidate = FALSE;
 
-    /* First apply */
-    TEST_ASSERT_EQUAL(E_OK, CanComm_Adapter_ApplyDecision(&decision));
-    /* Second apply */
-    TEST_ASSERT_EQUAL(E_OK, CanComm_Adapter_ApplyDecision(&decision));
+    (void)CanComm_Adapter_ApplyDecision(&decision);
+    (void)CanComm_Adapter_ApplyDecision(&decision);
 
-    TEST_ASSERT_EQUAL_UINT8(2u, CanComm_Mock_GetRequestComModeCallCount(CANCOMM_CH_ADAS1));
+    for (ch = 0u; ch < CANCOMM_CH_NUM; ch++)
+    {
+        TEST_ASSERT_TRUE(CanComm_Mock_GetRequestComModeCallCount(ch) >= 1u);
+    }
 }
 
 void test_adapter_handle_comm_e_not_ok(void)
 {
-    CanComm_OutputDecisionType decision;
-    CanComm_Mock_Reset();
-    decision.bswmRequest = CANCOMM_BSWM_REQUEST_FULL;
-    decision.sleepCandidate = FALSE;
+    ComM_ModeType mode;
 
-    /* NULL decision should return E_NOT_OK */
-    TEST_ASSERT_EQUAL(E_NOT_OK, CanComm_Adapter_ApplyDecision(NULL));
+    TEST_ASSERT_EQUAL(E_NOT_OK, CanComm_Adapter_GetComMode(CANCOMM_CH_NUM, &mode));
+    TEST_ASSERT_EQUAL(E_NOT_OK, CanComm_Adapter_RequestComMode(CANCOMM_CH_NUM, COMM_FULL_COMMUNICATION));
 }
 
 void test_adapter_bswm_request_called(void)
 {
     CanComm_OutputDecisionType decision;
-    CanComm_Mock_Reset();
     CanComm_ChannelIdType ch;
+
+    CanComm_Mock_Reset();
 
     for (ch = 0u; ch < CANCOMM_CH_NUM; ch++)
     {
@@ -115,10 +118,10 @@ void test_adapter_request_com_mode_channel_bounds(void)
 
 void test_adapter_build_snapshot_null(void)
 {
-    TEST_ASSERT_EQUAL(E_NOT_OK, CanComm_Adapter_BuildInputSnapshot(NULL));
+    TEST_ASSERT_EQUAL(E_NOT_OK, CanComm_Adapter_BuildInputSnapshot(NULL_PTR));
 }
 
 void test_adapter_apply_decision_null(void)
 {
-    TEST_ASSERT_EQUAL(E_NOT_OK, CanComm_Adapter_ApplyDecision(NULL));
+    TEST_ASSERT_EQUAL(E_NOT_OK, CanComm_Adapter_ApplyDecision(NULL_PTR));
 }

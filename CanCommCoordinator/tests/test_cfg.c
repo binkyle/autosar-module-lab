@@ -14,6 +14,22 @@ void test_cfg_channel_count(void)
     TEST_ASSERT_EQUAL_UINT8(6u, CANCOMM_CH_NUM);
 }
 
+void test_cfg_source_word_num(void)
+{
+    TEST_ASSERT_EQUAL_UINT8(2u, CANCOMM_SOURCE_WORD_NUM);
+    TEST_ASSERT_EQUAL_UINT16(64u, CANCOMM_MAX_SOURCE_NUM);
+}
+
+void test_cfg_source_debug_name_disabled(void)
+{
+    TEST_ASSERT_EQUAL_HEX8(STD_OFF, CANCOMM_ENABLE_SOURCE_DEBUG_NAME);
+}
+
+void test_cfg_source_config_table_disabled(void)
+{
+    TEST_ASSERT_EQUAL_HEX8(STD_OFF, CANCOMM_ENABLE_SOURCE_CONFIG_TABLE);
+}
+
 void test_cfg_adas1_channel_mask(void)
 {
     TEST_ASSERT_TRUE(CANCOMM_MASK_ADAS1 == CanComm_ChannelConfigTable[CANCOMM_CH_ADAS1].channelMask);

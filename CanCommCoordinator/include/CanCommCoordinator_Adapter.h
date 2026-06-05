@@ -10,12 +10,7 @@ extern "C" {
 
 /* --- Abstract Adapter Interface ----------------------------------------- */
 
-extern Std_ReturnType CanComm_Adapter_GetIgnition(
-    CanComm_IgnitionModeType* ignition);
-
-extern Std_ReturnType CanComm_Adapter_GetPncRequest(
-    CanComm_PncRequestType* pncRequest);
-
+/* Per-channel ComM operations (used by ApplyDecision implementation) */
 extern Std_ReturnType CanComm_Adapter_GetComMode(
     CanComm_ChannelIdType ch,
     ComM_ModeType* mode);
@@ -27,15 +22,7 @@ extern Std_ReturnType CanComm_Adapter_RequestComMode(
 extern Std_ReturnType CanComm_Adapter_RequestBswMMode(
     CanComm_BswMRequestType mode);
 
-extern Std_ReturnType CanComm_Adapter_GetLocalKeepAwake(
-    CanComm_LocalKeepAwakeType* keepAwake);
-
-extern Std_ReturnType CanComm_Adapter_GetDiagKeepAwake(
-    boolean* diagKeepAwake);
-
-extern Std_ReturnType CanComm_Adapter_GetOtaKeepAwake(
-    boolean* otaKeepAwake);
-
+/* Exclusive area protection */
 extern void CanComm_Adapter_EnterExclusiveArea(void);
 extern void CanComm_Adapter_ExitExclusiveArea(void);
 

@@ -17,11 +17,13 @@ SRCS    := ../src/CanCommCoordinator_Cfg.c \
            ../src/CanCommCoordinator_State.c \
            ../src/CanCommCoordinator_App.c \
            ../src/CanCommCoordinator_Debug.c \
+           ../src/CanCommCoordinator_SourceMask.c \
            ../src/CanCommCoordinator.c \
            ../project/generic/CanCommCoordinator_GenericMock.c \
            support/unity.c
 
-TESTS   := test_policy.c \
+TESTS   := test_sourcemask.c \
+           test_policy.c \
            test_state.c \
            test_cfg.c \
            test_adapter.c \

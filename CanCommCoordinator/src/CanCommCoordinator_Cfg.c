@@ -1,6 +1,19 @@
 #include "CanCommCoordinator_Cfg.h"
 #include "CanCommCoordinator_Types.h"
+#include "CanCommCoordinator_SourceMask.h"
 #include "ComM.h"
+
+/* --- Project-Specific Source IDs ---------------------------------------- */
+/* These are project configuration, NOT core framework definitions. */
+#define CANCOMM_SRC_ID_IGNITION         0u
+#define CANCOMM_SRC_ID_PNC_GLOBAL       1u
+#define CANCOMM_SRC_ID_PNC_ADAS         2u
+#define CANCOMM_SRC_ID_DIAG_KEEP        3u
+#define CANCOMM_SRC_ID_OTA_KEEP         4u
+#define CANCOMM_SRC_ID_LOCAL_KEEP       5u
+#define CANCOMM_SRC_ID_HOLD_VALID       6u
+
+#define SRC_MASK(id)    CANCOMM_SOURCE_BIT_MASK(id)
 
 /* --- Output Action Set Templates ---------------------------------------- */
 /* Action: All channels FULL_COMMUNICATION */
@@ -40,44 +53,60 @@ static const CanComm_OutputActionSetType CanComm_ActionAdasOnly =
 
 /* --- Policy Rule Table -------------------------------------------------- */
 /*
- * Rule matching order: first match wins.
- * Recommend placing most specific rules first, catch-all last.
+ * Rule matching: highest priority wins. If priority equal, first in table wins.
+ *
+ * Source semantics (project-specific):
+ *   IGNITION_ON  -> all channels FULL (highest priority)
+ *   PNC_GLOBAL + HOLD_VALID -> all channels FULL
+ *   PNC_ADAS + HOLD_VALID   -> ADAS1 only
+ *   DIAG / OTA / LOCAL keep -> all channels FULL
+ *   No active sources       -> all NO, sleep candidate
  */
 const CanComm_PolicyRuleType CanComm_PolicyRuleTable[] =
 {
-    /* 1. KL15 ON -> all FULL */
+    /* 1. IGNITION ON -> all FULL (priority 100) */
     {
-        .ignition = CANCOMM_IGN_ON,
-        .pncRequest = CANCOMM_PNC_NONE,
-        .holdState = CANCOMM_HOLD_INVALID,
-        .localKeepAwake = CANCOMM_LOCAL_KEEP_NONE,
-        .actionSet = &CanComm_ActionAllFull
+        .priority       = 100u,
+        .requiredAllMask.word    = { SRC_MASK(CANCOMM_SRC_ID_IGNITION), 0u },
+        .requiredAnyMask.word    = { 0u, 0u },
+        .forbiddenMask.word      = { 0u, 0u },
+        .actionSet      = &CanComm_ActionAllFull
     },
-    /* 2. KL15 OFF + PNC_GLOBAL valid -> all FULL */
+    /* 2. PNC_GLOBAL + HOLD_VALID -> all FULL (priority 90) */
     {
-        .ignition = CANCOMM_IGN_OFF,
-        .pncRequest = CANCOMM_PNC_GLOBAL,
-        .holdState = CANCOMM_HOLD_VALID,
-        .localKeepAwake = CANCOMM_LOCAL_KEEP_NONE,
-        .actionSet = &CanComm_ActionAllFull
+        .priority       = 90u,
+        .requiredAllMask.word    = { SRC_MASK(CANCOMM_SRC_ID_PNC_GLOBAL) | SRC_MASK(CANCOMM_SRC_ID_HOLD_VALID), 0u },
+        .requiredAnyMask.word    = { 0u, 0u },
+        .forbiddenMask.word      = { 0u, 0u },
+        .actionSet      = &CanComm_ActionAllFull
     },
-    /* 3. KL15 OFF + PNC_ADAS_ONLY valid -> ADAS1 only */
+    /* 3. PNC_ADAS + HOLD_VALID -> ADAS1 only (priority 80) */
     {
-        .ignition = CANCOMM_IGN_OFF,
-        .pncRequest = CANCOMM_PNC_ADAS_ONLY,
-        .holdState = CANCOMM_HOLD_VALID,
-        .localKeepAwake = CANCOMM_LOCAL_KEEP_NONE,
-        .actionSet = &CanComm_ActionAdasOnly
+        .priority       = 80u,
+        .requiredAllMask.word    = { SRC_MASK(CANCOMM_SRC_ID_PNC_ADAS) | SRC_MASK(CANCOMM_SRC_ID_HOLD_VALID), 0u },
+        .requiredAnyMask.word    = { 0u, 0u },
+        .forbiddenMask.word      = { SRC_MASK(CANCOMM_SRC_ID_PNC_GLOBAL), 0u },
+        .actionSet      = &CanComm_ActionAdasOnly
     },
-    /* 4. KL15 OFF + no PNC + no local keep -> all NO, sleep candidate */
+    /* 4. DIAG / OTA / LOCAL keep awake -> all FULL (priority 85) */
     {
-        .ignition = CANCOMM_IGN_OFF,
-        .pncRequest = CANCOMM_PNC_NONE,
-        .holdState = CANCOMM_HOLD_INVALID,
-        .localKeepAwake = CANCOMM_LOCAL_KEEP_NONE,
-        .actionSet = &CanComm_ActionAllNo
+        .priority       = 85u,
+        .requiredAllMask.word    = { 0u, 0u },
+        .requiredAnyMask.word    = { SRC_MASK(CANCOMM_SRC_ID_DIAG_KEEP) | SRC_MASK(CANCOMM_SRC_ID_OTA_KEEP) | SRC_MASK(CANCOMM_SRC_ID_LOCAL_KEEP), 0u },
+        .forbiddenMask.word      = { 0u, 0u },
+        .actionSet      = &CanComm_ActionAllFull
+    },
+    /* 5. Catch-all: no active sources -> all NO, sleep candidate (priority 0)
+     *    forbiddenMask = ALL_SOURCES ensures this only matches when mask is empty.
+     *    Non-empty inputs that miss rules 1-4 will hit fallback (safe FULL).
+     */
+    {
+        .priority       = 0u,
+        .requiredAllMask.word    = { 0u, 0u },
+        .requiredAnyMask.word    = { 0u, 0u },
+        .forbiddenMask.word      = { 0xFFFFFFFFu, 0xFFFFFFFFu },
+        .actionSet      = &CanComm_ActionAllNo
     }
-    /* Fallback is handled by Policy engine when no rule matches */
 };
 
 #define CANCOMM_POLICY_RULE_COUNT \
