@@ -62,11 +62,6 @@ extern void test_adapter_request_com_mode_channel_bounds(void);
 extern void test_adapter_build_snapshot_null(void);
 extern void test_adapter_apply_decision_null(void);
 
-/* Legacy tests */
-extern void test_legacy_nm_parse_default_off(void);
-extern void test_legacy_nm_parse_offset_config(void);
-extern void test_legacy_nm_parse_mask_config(void);
-
 /* MainFunction integration tests */
 extern void test_mainfunction_repeated_call_no_duplicate_request(void);
 extern void test_mainfunction_init_then_run(void);
@@ -133,11 +128,6 @@ int main(void)
     RUN_TEST(test_adapter_request_com_mode_channel_bounds);
     RUN_TEST(test_adapter_build_snapshot_null);
     RUN_TEST(test_adapter_apply_decision_null);
-
-    /* Legacy tests */
-    RUN_TEST(test_legacy_nm_parse_default_off);
-    RUN_TEST(test_legacy_nm_parse_offset_config);
-    RUN_TEST(test_legacy_nm_parse_mask_config);
 
     /* MainFunction integration tests */
     RUN_TEST(test_mainfunction_repeated_call_no_duplicate_request);

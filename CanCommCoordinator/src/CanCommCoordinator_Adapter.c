@@ -1,45 +1,35 @@
 #include "CanCommCoordinator_Adapter.h"
 #include "CanCommCoordinator_Cfg.h"
 #include "CanCommCoordinator_Types.h"
-#include "CanCommCoordinator_SourceMask.h"
-#include "SchM_CanCommCoordinator.h"
 
-/* --- Default Stubs (intentionally minimal, project layer overrides) ----- */
-/*
- * This file provides default exclusive-area helpers and skeleton Adapter logic.
- * BuildInputSnapshot / ApplyDecision MAY be overridden by:
- *   - project/vector/CanCommCoordinator_VectorAdapter.c  (Vector target)
- *   - project/generic/CanCommCoordinator_GenericMock.c   (host test)
- *
- * Weak symbols are intentionally NOT used, because they are not portable
- * across all embedded compilers (e.g. MSVC, some ARM/GHS variants).
- */
+/* --- Private state for de-duplication ----------------------------------- */
+static ComM_ModeType lastRequestedMode[CANCOMM_CH_NUM];
+static CanComm_BswMRequestType lastBswMRequest = CANCOMM_BSWM_NO_REQUEST;
+static boolean initialized = FALSE;
 
-void CanComm_Adapter_EnterExclusiveArea(void)
+/* --- Reset API (called by Init or test setup) --------------------------- */
+
+void CanComm_Adapter_Reset(void)
 {
-    SchM_Enter_CanCommCoordinator_CanCommExclusiveArea();
-}
-
-void CanComm_Adapter_ExitExclusiveArea(void)
-{
-    SchM_Exit_CanCommCoordinator_CanCommExclusiveArea();
-}
-
-/* --- Snapshot Builder (default: empty source mask, safe fallback) ------- */
-
-Std_ReturnType CanComm_Adapter_BuildInputSnapshot(
-    CanComm_InputSnapshotType* snapshot)
-{
-    if (snapshot == NULL_PTR)
+    CanComm_ChannelIdType ch;
+    for (ch = 0u; ch < CANCOMM_CH_NUM; ch++)
     {
-        return E_NOT_OK;
+        lastRequestedMode[ch] = COMM_NO_COMMUNICATION;
     }
-
-    CanComm_SourceMask_Clear(&snapshot->activeSourceMask);
-    return E_OK;
+    lastBswMRequest = CANCOMM_BSWM_NO_REQUEST;
+    initialized = TRUE;
 }
 
-/* --- Decision Application (default implementation) ---------------------- */
+/* --- Decision Application (core implementation with de-duplication) ----- */
+/*
+ * This file provides the canonical ApplyDecision implementation.
+ * It is NOT overridden by project layers; instead, project layers provide
+ * the underlying primitives (RequestComMode, RequestBswMMode, BuildInputSnapshot,
+ * Enter/ExitExclusiveArea) via GenericMock or VectorAdapter.
+ *
+ * De-duplication: only calls ComM_RequestComMode when target mode changes,
+ * reducing BSW overhead and NM message storms.
+ */
 
 Std_ReturnType CanComm_Adapter_ApplyDecision(
     const CanComm_OutputDecisionType* decision)
@@ -52,20 +42,40 @@ Std_ReturnType CanComm_Adapter_ApplyDecision(
         return E_NOT_OK;
     }
 
-    /* Apply per-channel ComM mode requests */
+    /* Lazy init: if Reset was never called, initialize now */
+    if (initialized == FALSE)
+    {
+        CanComm_Adapter_Reset();
+    }
+
+    /* Apply per-channel ComM mode requests (de-duplicated) */
     for (ch = 0u; ch < CANCOMM_CH_NUM; ch++)
     {
-        if (CanComm_Adapter_RequestComMode(ch, decision->targetComMode[ch]) != E_OK)
+        if (decision->targetComMode[ch] != lastRequestedMode[ch])
         {
-            ret = E_NOT_OK;
+            if (CanComm_Adapter_RequestComMode(ch, decision->targetComMode[ch]) == E_OK)
+            {
+                lastRequestedMode[ch] = decision->targetComMode[ch];
+            }
+            else
+            {
+                ret = E_NOT_OK;
+            }
         }
     }
 
-    /* Optional: BswM request */
+    /* Optional: BswM request (de-duplicated) */
 #if (CANCOMM_USE_BSWM_ACTION == STD_ON)
-    if (CanComm_Adapter_RequestBswMMode(decision->bswmRequest) != E_OK)
+    if (decision->bswmRequest != lastBswMRequest)
     {
-        ret = E_NOT_OK;
+        if (CanComm_Adapter_RequestBswMMode(decision->bswmRequest) == E_OK)
+        {
+            lastBswMRequest = decision->bswmRequest;
+        }
+        else
+        {
+            ret = E_NOT_OK;
+        }
     }
 #endif
 

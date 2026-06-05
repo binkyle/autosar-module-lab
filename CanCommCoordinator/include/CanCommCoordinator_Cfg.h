@@ -36,12 +36,9 @@ extern "C" {
 #define CANCOMM_CH_CAN9                         5u
 /* CAN10 etc. can be added here without changing core logic */
 
-/* --- Legacy Compatibility ----------------------------------------------- */
-/* Default OFF: legacy NM parse is a migration-only feature.
- * In standard mode, PNC handling should be done by CanNm/Nm/ComM/BswM. */
-#define CANCOMM_ENABLE_LEGACY_NM_PARSE          STD_OFF
-
 /* --- Fallback Strategy -------------------------------------------------- */
+#define CANCOMM_FALLBACK_ALL_FULL               0u
+#define CANCOMM_FALLBACK_ALL_NO                 1u
 #define CANCOMM_FALLBACK_STRATEGY               CANCOMM_FALLBACK_ALL_FULL
 
 /* --- BswM Integration --------------------------------------------------- */

@@ -3,6 +3,10 @@
 #include "CanCommCoordinator_Adapter.h"
 #include "CanCommCoordinator_SourceMask.h"
 
+/* --- External Config ---------------------------------------------------- */
+extern const CanComm_SourceTimerConfigType CanComm_SourceTimerConfigTable[];
+extern const uint8 CanComm_SourceTimerConfigCount;
+
 /* --- Private Data ------------------------------------------------------- */
 static CanComm_RuntimeStateType CanComm_State;
 
@@ -32,6 +36,8 @@ void CanComm_State_Init(void)
 
 void CanComm_State_Tick(void)
 {
+    uint8 i;
+
     CanComm_Adapter_EnterExclusiveArea();
 
     if (CanComm_State.holdTimerTicks > 0u)
@@ -40,8 +46,13 @@ void CanComm_State_Tick(void)
 
         if (CanComm_State.holdTimerTicks == 0u)
         {
-            /* Hold timer expired -> clear HOLD_VALID source (source id 6, project-configured) */
-            (void)CanComm_SourceMask_Reset(&CanComm_State.activeSourceMask, 6u);
+            /* Hold timer expired -> clear all hold sources from config table */
+            for (i = 0u; i < CanComm_SourceTimerConfigCount; i++)
+            {
+                (void)CanComm_SourceMask_Reset(
+                    &CanComm_State.activeSourceMask,
+                    CanComm_SourceTimerConfigTable[i].holdSourceId);
+            }
         }
     }
 
@@ -50,15 +61,22 @@ void CanComm_State_Tick(void)
 
 void CanComm_State_OnSourceActive(CanComm_SourceIdType sourceId)
 {
+    uint8 i;
+
     CanComm_Adapter_EnterExclusiveArea();
 
     (void)CanComm_SourceMask_Set(&CanComm_State.activeSourceMask, sourceId);
 
-    /* For PNC-related sources (ids 1 and 2, project-configured), reload hold timer */
-    if ((sourceId == 1u) || (sourceId == 2u))
+    /* Check timer config table: if this source triggers a hold timer, reload it */
+    for (i = 0u; i < CanComm_SourceTimerConfigCount; i++)
     {
-        CanComm_State.holdTimerTicks = CANCOMM_PNC_HOLD_TICKS;
-        (void)CanComm_SourceMask_Set(&CanComm_State.activeSourceMask, 6u);
+        if (sourceId == CanComm_SourceTimerConfigTable[i].triggerSourceId)
+        {
+            CanComm_State.holdTimerTicks = CanComm_SourceTimerConfigTable[i].holdTicks;
+            (void)CanComm_SourceMask_Set(
+                &CanComm_State.activeSourceMask,
+                CanComm_SourceTimerConfigTable[i].holdSourceId);
+        }
     }
 
     CanComm_Adapter_ExitExclusiveArea();

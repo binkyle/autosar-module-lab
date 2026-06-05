@@ -44,6 +44,8 @@ void CanComm_Mock_Reset(void)
     CanComm_MockState.bswmRequestCallCount = 0u;
     CanComm_MockState.exclusiveAreaEntered = FALSE;
     CanComm_MockState.exclusiveAreaExited = FALSE;
+
+    CanComm_Adapter_Reset();
 }
 
 void CanComm_Mock_SetSourceActive(CanComm_SourceIdType sourceId)
@@ -163,26 +165,4 @@ Std_ReturnType CanComm_Adapter_BuildInputSnapshot(
     return E_OK;
 }
 
-/* --- Decision Application ----------------------------------------------- */
 
-Std_ReturnType CanComm_Adapter_ApplyDecision(
-    const CanComm_OutputDecisionType* decision)
-{
-    CanComm_ChannelIdType ch;
-
-    if (decision == NULL_PTR)
-    {
-        return E_NOT_OK;
-    }
-
-    for (ch = 0u; ch < CANCOMM_CH_NUM; ch++)
-    {
-        CanComm_MockState.requestedMode[ch] = decision->targetComMode[ch];
-        CanComm_MockState.requestComModeCallCount[ch]++;
-    }
-
-    CanComm_MockState.lastBswMRequest = decision->bswmRequest;
-    CanComm_MockState.bswmRequestCallCount++;
-
-    return E_OK;
-}

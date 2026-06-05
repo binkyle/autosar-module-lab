@@ -87,7 +87,7 @@ STATIC void Policy_ApplyFallback(CanComm_OutputDecisionType* decision)
             decision->targetComMode[ch] = COMM_FULL_COMMUNICATION;
             decision->targetTxGate[ch] = CANCOMM_TX_UNBLOCK;
         }
-        decision->bswmRequest = CANCOMM_BSWM_REQUEST_FULL;
+        decision->bswmRequest = CANCOMM_BSWM_REQUEST_ALL_FULL;
         decision->sleepCandidate = FALSE;
     }
 }

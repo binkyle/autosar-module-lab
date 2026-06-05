@@ -42,7 +42,7 @@ void test_adapter_request_com_mode_called_when_target_differs(void)
         decision.targetComMode[ch] = COMM_FULL_COMMUNICATION;
         decision.targetTxGate[ch] = CANCOMM_TX_UNBLOCK;
     }
-    decision.bswmRequest = CANCOMM_BSWM_REQUEST_FULL;
+    decision.bswmRequest = CANCOMM_BSWM_REQUEST_ALL_FULL;
     decision.sleepCandidate = FALSE;
 
     TEST_ASSERT_EQUAL(E_OK, CanComm_Adapter_ApplyDecision(&decision));
@@ -55,8 +55,8 @@ void test_adapter_request_com_mode_called_when_target_differs(void)
 
 void test_adapter_no_repeat_request_when_target_same(void)
 {
-    /* GenericMock ApplyDecision always increments count; anti-repeat is a
-     * production VectorAdapter concern. This test documents current behavior. */
+    /* ApplyDecision de-duplicates: same target mode should not trigger
+     * another ComM_RequestComMode call. */
     CanComm_OutputDecisionType decision;
     CanComm_ChannelIdType ch;
 
@@ -67,7 +67,7 @@ void test_adapter_no_repeat_request_when_target_same(void)
         decision.targetComMode[ch] = COMM_FULL_COMMUNICATION;
         decision.targetTxGate[ch] = CANCOMM_TX_UNBLOCK;
     }
-    decision.bswmRequest = CANCOMM_BSWM_REQUEST_FULL;
+    decision.bswmRequest = CANCOMM_BSWM_REQUEST_ALL_FULL;
     decision.sleepCandidate = FALSE;
 
     (void)CanComm_Adapter_ApplyDecision(&decision);
@@ -75,7 +75,7 @@ void test_adapter_no_repeat_request_when_target_same(void)
 
     for (ch = 0u; ch < CANCOMM_CH_NUM; ch++)
     {
-        TEST_ASSERT_TRUE(CanComm_Mock_GetRequestComModeCallCount(ch) >= 1u);
+        TEST_ASSERT_EQUAL_UINT8(1u, CanComm_Mock_GetRequestComModeCallCount(ch));
     }
 }
 

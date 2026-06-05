@@ -10,14 +10,16 @@ CC      := gcc
 CFLAGS  := -std=c99 -Wall -Wextra -g -O0
 INCS    := -I../include -I../src -I../stub/BSW -Isupport
 
-# Core module sources (Adapter.c is intentionally EXCLUDED;
-# its implementation is selected via GenericMock or VectorAdapter)
-SRCS    := ../src/CanCommCoordinator_Cfg.c \
+# Core module sources (ApplyDecision is in Adapter.c;
+# project layer provides primitives via GenericMock or VectorAdapter)
+# Project configuration is selected via GenericCfg (host test) or VectorCfg (target)
+SRCS    := ../project/generic/CanCommCoordinator_GenericCfg.c \
            ../src/CanCommCoordinator_Policy.c \
            ../src/CanCommCoordinator_State.c \
            ../src/CanCommCoordinator_App.c \
            ../src/CanCommCoordinator_Debug.c \
            ../src/CanCommCoordinator_SourceMask.c \
+           ../src/CanCommCoordinator_Adapter.c \
            ../src/CanCommCoordinator.c \
            ../project/generic/CanCommCoordinator_GenericMock.c \
            support/unity.c
@@ -27,7 +29,6 @@ TESTS   := test_sourcemask.c \
            test_state.c \
            test_cfg.c \
            test_adapter.c \
-           test_legacy.c \
            test_mainfunction.c \
            test_runner.c
 

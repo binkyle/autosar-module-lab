@@ -34,6 +34,9 @@ extern Std_ReturnType CanComm_Adapter_BuildInputSnapshot(
 extern Std_ReturnType CanComm_Adapter_ApplyDecision(
     const CanComm_OutputDecisionType* decision);
 
+/* --- Reset -------------------------------------------------------------- */
+extern void CanComm_Adapter_Reset(void);
+
 #ifdef __cplusplus
 }
 #endif

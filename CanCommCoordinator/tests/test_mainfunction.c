@@ -26,20 +26,12 @@ void test_mainfunction_repeated_call_no_duplicate_request(void)
     }
 
     /* Second MainFunction call with same input -> should NOT request again
-     * (anti-repeat logic is expected in the adapter/application layer) */
+     * because ApplyDecision de-duplicates unchanged target modes. */
     CanCommCoordinator_MainFunction();
 
-    /* Note: Current GenericMock ApplyDecision increments count every time.
-     * A production VectorAdapter should suppress duplicate ComM_RequestComMode
-     * when mode is unchanged. This test documents the expected behavior.
-     * If anti-repeat is implemented, the count should remain 1.
-     */
     for (ch = 0u; ch < CANCOMM_CH_NUM; ch++)
     {
-        /* Current implementation without anti-repeat: count == 2 */
-        /* With anti-repeat: count == 1 */
-        /* We accept either, but ideally count should not grow unboundedly. */
-        TEST_ASSERT_TRUE(CanComm_Mock_GetRequestComModeCallCount(ch) >= 1u);
+        TEST_ASSERT_EQUAL_UINT8(1u, CanComm_Mock_GetRequestComModeCallCount(ch));
     }
 }
 

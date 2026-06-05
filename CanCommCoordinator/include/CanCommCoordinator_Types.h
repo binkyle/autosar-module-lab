@@ -59,8 +59,9 @@ typedef enum
 typedef enum
 {
     CANCOMM_BSWM_NO_REQUEST = 0,
-    CANCOMM_BSWM_REQUEST_FULL,
-    CANCOMM_BSWM_REQUEST_NO,
+    CANCOMM_BSWM_REQUEST_ALL_FULL,
+    CANCOMM_BSWM_REQUEST_ADAS_ONLY,
+    CANCOMM_BSWM_REQUEST_ALL_NO,
     CANCOMM_BSWM_REQUEST_SLEEP_CANDIDATE
 } CanComm_BswMRequestType;
 
@@ -122,6 +123,19 @@ typedef struct
     boolean sleepCandidate;
 } CanComm_OutputActionSetType;
 
+/* --- Source Timer Configuration ----------------------------------------- */
+/*
+ * Maps trigger sources to hold sources with a shared hold timer.
+ * When triggerSourceId becomes active, the State layer sets holdSourceId
+ * and reloads the timer. When the timer expires, all holdSourceIds are cleared.
+ */
+typedef struct
+{
+    CanComm_SourceIdType triggerSourceId;  /* Source that triggers the hold timer */
+    CanComm_SourceIdType holdSourceId;     /* Source set while timer is running */
+    uint16 holdTicks;                      /* Timer duration in MainFunction ticks */
+} CanComm_SourceTimerConfigType;
+
 /* --- Policy Rule -------------------------------------------------------- */
 /*
  * Generic rule matching based on source masks and priority.
@@ -136,17 +150,6 @@ typedef struct
     CanComm_SourceMaskType forbiddenMask;     /* Active must contain NONE of these */
     const CanComm_OutputActionSetType* actionSet;
 } CanComm_PolicyRuleType;
-
-/* --- Legacy NM Parse Config --------------------------------------------- */
-typedef struct
-{
-    uint8 pniByteOffset;
-    uint8 pniBitMask;
-    uint8 pncGlobalByteOffset;
-    uint8 pncGlobalBitMask;
-    uint8 pncAdasByteOffset;
-    uint8 pncAdasBitMask;
-} CanComm_LegacyNmParseConfigType;
 
 #ifdef __cplusplus
 }

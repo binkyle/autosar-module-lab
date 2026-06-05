@@ -87,11 +87,14 @@ Std_ReturnType CanComm_Adapter_RequestBswMMode(
     /* Map internal request to BswM mode request. Project-specific. */
     switch (mode)
     {
-        case CANCOMM_BSWM_REQUEST_FULL:
+        case CANCOMM_BSWM_REQUEST_ALL_FULL:
             BswM_RequestMode(0u, 0u); /* TODO: map to real mode request IDs */
             break;
-        case CANCOMM_BSWM_REQUEST_NO:
-            BswM_RequestMode(0u, 1u);
+        case CANCOMM_BSWM_REQUEST_ADAS_ONLY:
+            BswM_RequestMode(0u, 1u); /* TODO: map to real mode request IDs */
+            break;
+        case CANCOMM_BSWM_REQUEST_ALL_NO:
+            BswM_RequestMode(0u, 2u);
             break;
         case CANCOMM_BSWM_REQUEST_SLEEP_CANDIDATE:
             BswM_RequestMode(0u, 2u);

@@ -15,6 +15,19 @@
 
 #define SRC_MASK(id)    CANCOMM_SOURCE_BIT_MASK(id)
 
+/* --- Source Timer Configuration ----------------------------------------- */
+/* Maps trigger sources to hold sources. Core framework does NOT hard-code ids. */
+const CanComm_SourceTimerConfigType CanComm_SourceTimerConfigTable[] =
+{
+    { CANCOMM_SRC_ID_PNC_GLOBAL, CANCOMM_SRC_ID_HOLD_VALID, CANCOMM_PNC_HOLD_TICKS },
+    { CANCOMM_SRC_ID_PNC_ADAS,   CANCOMM_SRC_ID_HOLD_VALID, CANCOMM_PNC_HOLD_TICKS }
+};
+
+#define CANCOMM_SOURCE_TIMER_CONFIG_COUNT \
+    (sizeof(CanComm_SourceTimerConfigTable) / sizeof(CanComm_SourceTimerConfigTable[0]))
+
+const uint8 CanComm_SourceTimerConfigCount = (uint8)CANCOMM_SOURCE_TIMER_CONFIG_COUNT;
+
 /* --- Output Action Set Templates ---------------------------------------- */
 /* Action: All channels FULL_COMMUNICATION */
 static const CanComm_OutputActionSetType CanComm_ActionAllFull =
@@ -23,7 +36,7 @@ static const CanComm_OutputActionSetType CanComm_ActionAllFull =
     .noComMask      = 0u,
     .txUnblockMask  = CANCOMM_MASK_ALL,
     .txBlockMask    = 0u,
-    .bswmRequest    = CANCOMM_BSWM_REQUEST_FULL,
+    .bswmRequest    = CANCOMM_BSWM_REQUEST_ALL_FULL,
     .sleepCandidate = FALSE
 };
 
@@ -47,7 +60,7 @@ static const CanComm_OutputActionSetType CanComm_ActionAdasOnly =
     .txUnblockMask  = CANCOMM_MASK_ADAS1,
     .txBlockMask    = (CANCOMM_MASK_ADAS2 | CANCOMM_MASK_ADAS_SUB |
                        CANCOMM_MASK_PDC | CANCOMM_MASK_CAN5 | CANCOMM_MASK_CAN9),
-    .bswmRequest    = CANCOMM_BSWM_REQUEST_FULL,
+    .bswmRequest    = CANCOMM_BSWM_REQUEST_ALL_FULL,
     .sleepCandidate = FALSE
 };
 
@@ -115,7 +128,12 @@ const CanComm_PolicyRuleType CanComm_PolicyRuleTable[] =
 const uint8 CanComm_PolicyRuleCount = (uint8)CANCOMM_POLICY_RULE_COUNT;
 
 /* --- Fallback Action Set ------------------------------------------------ */
+/* Controlled by CANCOMM_FALLBACK_STRATEGY in Cfg.h */
+#if (CANCOMM_FALLBACK_STRATEGY == CANCOMM_FALLBACK_ALL_NO)
+const CanComm_OutputActionSetType* const CanComm_FallbackActionSet = &CanComm_ActionAllNo;
+#else
 const CanComm_OutputActionSetType* const CanComm_FallbackActionSet = &CanComm_ActionAllFull;
+#endif
 
 /* --- Channel Configuration Table ---------------------------------------- */
 /*
@@ -131,7 +149,7 @@ const CanComm_ChannelConfigType CanComm_ChannelConfigTable[CANCOMM_CH_NUM] =
         .nmChannel = 0u,
         .nmRxPduId = 0u,
         .channelMask = CANCOMM_MASK_ADAS1,
-        .groupMask = CANCOMM_MASK_ADAS1   /* ADAS group */
+        .groupMask = CANCOMM_MASK_ADAS1
     },
     /* ADAS2 */
     {
@@ -178,15 +196,4 @@ const CanComm_ChannelConfigType CanComm_ChannelConfigTable[CANCOMM_CH_NUM] =
         .channelMask = CANCOMM_MASK_CAN9,
         .groupMask = CANCOMM_MASK_CAN9
     }
-};
-
-/* --- Legacy NM Parse Configuration -------------------------------------- */
-const CanComm_LegacyNmParseConfigType CanComm_LegacyNmParseConfig =
-{
-    .pniByteOffset = 5u,
-    .pniBitMask = 0x40u,         /* bit 6 (0-indexed: 0x40) */
-    .pncGlobalByteOffset = 5u,
-    .pncGlobalBitMask = 0x08u,   /* bit 3 */
-    .pncAdasByteOffset = 6u,
-    .pncAdasBitMask = 0x01u      /* bit 0 */
 };
