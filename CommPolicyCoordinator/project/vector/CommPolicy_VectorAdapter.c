@@ -4,6 +4,7 @@
 #include "CommPolicy_Types.h"
 #include "CommPolicy_SourceMask.h"
 #include "CommPolicy_VectorBinding.h"
+#include "CommPolicy_VectorProjectIds.h"
 #include "ComM.h"
 #include "BswM.h"
 #include "SchM_CommPolicyCoordinator.h"
@@ -19,16 +20,6 @@
  *   - Do NOT call Nm_Enable/DisableCommunication from core logic.
  *   - Do NOT call Com_IpduGroupStart/Stop from core logic (migrate to BswM).
  */
-
-/* --- Project-specific source ID mapping (Vector project) ---------------- */
-/* TODO: synchronize with DaVinci Configurator source definitions */
-#define VECTOR_SRC_ID_IGNITION       0u
-#define VECTOR_SRC_ID_PNC_GLOBAL     1u
-#define VECTOR_SRC_ID_PNC_ADAS       2u
-#define VECTOR_SRC_ID_DIAG_KEEP      3u
-#define VECTOR_SRC_ID_OTA_KEEP       4u
-#define VECTOR_SRC_ID_LOCAL_KEEP     5u
-#define VECTOR_SRC_ID_HOLD_VALID     6u
 
 /* --- Exclusive Area (Vector SchM) --------------------------------------- */
 

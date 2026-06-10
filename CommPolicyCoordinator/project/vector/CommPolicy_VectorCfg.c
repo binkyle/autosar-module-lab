@@ -3,21 +3,7 @@
 #include "CommPolicy_SourceMask.h"
 #include "CommPolicy_ChannelMask.h"
 #include "CommPolicy_VectorBinding.h"
-
-/* --- Project-Specific Source IDs (Vector project) ----------------------- */
-/* These are project configuration, NOT core framework definitions. */
-#define VECTOR_SRC_ID_IGNITION         0u
-#define VECTOR_SRC_ID_PNC_GLOBAL       1u
-#define VECTOR_SRC_ID_PNC_ADAS         2u
-#define VECTOR_SRC_ID_DIAG_KEEP        3u
-#define VECTOR_SRC_ID_OTA_KEEP         4u
-#define VECTOR_SRC_ID_LOCAL_KEEP       5u
-#define VECTOR_SRC_ID_HOLD_VALID       6u
-
-#define VECTOR_MODE_REQ_ALL_FULL       0u
-#define VECTOR_MODE_REQ_ADAS_ONLY      1u
-#define VECTOR_MODE_REQ_ALL_NO         2u
-#define VECTOR_MODE_REQ_SLEEP          3u
+#include "CommPolicy_VectorProjectIds.h"
 
 #define SRC_MASK(id)    COMM_POLICY_SOURCE_BIT_MASK(id)
 #define CH_MASK(ch)     COMM_POLICY_CHANNEL_BIT_MASK(ch)

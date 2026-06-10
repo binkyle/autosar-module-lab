@@ -1,0 +1,23 @@
+# Build artifacts
+*.o
+*.obj
+*.exe
+*.out
+*.elf
+*.map
+*.bin
+*.hex
+
+# Test artifacts
+CommPolicyCoordinator/tests/CommPolicyCoordinator_tests*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db

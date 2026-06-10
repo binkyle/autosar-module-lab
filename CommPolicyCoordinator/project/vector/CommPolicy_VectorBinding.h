@@ -1,6 +1,12 @@
 #ifndef COMMPOLICY_VECTORBINDING_H
 #define COMMPOLICY_VECTORBINDING_H
 
+/*
+ * Vector binding layer only. Do not include from core include/src or project/generic.
+ * This header contains Vector/MICROSAR-specific types and bindings that must NOT
+ * leak into the core framework or generic project layers.
+ */
+
 #include "Std_Types.h"
 #include "CommPolicy_Types.h"
 #include "ComM.h"
@@ -8,6 +14,10 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/* --- BswM abstraction types (project can map to Vector/BswM generated types) */
+typedef uint16 CommPolicy_VectorBswMUserType;
+typedef uint16 CommPolicy_VectorBswMModeType;
 
 /* --- Vector Channel Binding (logicalChannel -> ComM User/NetworkHandle) - */
 typedef struct
@@ -23,8 +33,8 @@ extern const CommPolicy_VectorChannelBindingType CommPolicy_VectorChannelBinding
 typedef struct
 {
     CommPolicy_ModeRequestIdType modeRequestId;
-    uint8                        bswmRequestingModule;
-    uint8                        bswmRequestedMode;
+    CommPolicy_VectorBswMUserType bswmRequestingModule;
+    CommPolicy_VectorBswMModeType bswmRequestedMode;
 } CommPolicy_VectorModeRequestBindingType;
 
 extern const CommPolicy_VectorModeRequestBindingType CommPolicy_VectorModeRequestBindingTable[];
