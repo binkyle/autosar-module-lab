@@ -2,7 +2,7 @@
 #include "CommPolicy_Types.h"
 #include "CommPolicy_SourceMask.h"
 #include "CommPolicy_ChannelMask.h"
-#include "ComM.h"
+#include "CommPolicy_VectorBinding.h"
 
 /* --- Project-Specific Source IDs (Vector project) ----------------------- */
 /* These are project configuration, NOT core framework definitions. */
@@ -160,16 +160,7 @@ const CommPolicy_ChannelConfigType CommPolicy_ChannelConfigTable[COMM_POLICY_CH_
     }
 };
 
-/* --- Vector Channel Binding (logicalChannel -> ComM User/NetworkHandle) - */
-/* This table is project-specific and lives in the Vector binding layer.
- * Core framework does NOT contain ComM_UserHandleType or NetworkHandleType. */
-typedef struct
-{
-    CommPolicy_LogicalChannelIdType logicalChannel;
-    ComM_UserHandleType commUser;
-    NetworkHandleType networkHandle;
-} CommPolicy_VectorChannelBindingType;
-
+/* --- Vector Channel Binding Table --------------------------------------- */
 const CommPolicy_VectorChannelBindingType CommPolicy_VectorChannelBindingTable[COMM_POLICY_CH_NUM] =
 {
     { 0u, ComMConf_ComMUser_CN_Backbone2_4e435fd4,      0u },
@@ -180,14 +171,7 @@ const CommPolicy_VectorChannelBindingType CommPolicy_VectorChannelBindingTable[C
     { 5u, ComMConf_ComMUser_CN_LIN03_400ext_1856f4be,   5u }
 };
 
-/* --- Vector Mode Request Binding (modeRequestId -> BswM user/mode) ------ */
-typedef struct
-{
-    CommPolicy_ModeRequestIdType modeRequestId;
-    uint8 bswmRequestingModule;
-    uint8 bswmRequestedMode;
-} CommPolicy_VectorModeRequestBindingType;
-
+/* --- Vector Mode Request Binding Table ---------------------------------- */
 const CommPolicy_VectorModeRequestBindingType CommPolicy_VectorModeRequestBindingTable[] =
 {
     { VECTOR_MODE_REQ_ALL_FULL,  0u, 0u },  /* TODO: replace with generated BswM symbols */

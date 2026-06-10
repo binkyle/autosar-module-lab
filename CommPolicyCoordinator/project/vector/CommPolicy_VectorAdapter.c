@@ -3,6 +3,7 @@
 #include "CommPolicy_Cfg.h"
 #include "CommPolicy_Types.h"
 #include "CommPolicy_SourceMask.h"
+#include "CommPolicy_VectorBinding.h"
 #include "ComM.h"
 #include "BswM.h"
 #include "SchM_CommPolicyCoordinator.h"
@@ -67,8 +68,6 @@ STATIC CommPolicy_CommModeType CommPolicy_VectorAdapter_MapFromComMMode(ComM_Mod
 
 /* --- ComM Mode ---------------------------------------------------------- */
 
-extern const CommPolicy_VectorChannelBindingType CommPolicy_VectorChannelBindingTable[COMM_POLICY_CH_NUM];
-
 STATIC const CommPolicy_VectorChannelBindingType* CommPolicy_Vector_FindChannelBinding(
     CommPolicy_LogicalChannelIdType logicalChannel)
 {
@@ -132,13 +131,16 @@ Std_ReturnType CommPolicy_Adapter_RequestComMode(
 
 /* --- Mode Request (mapped to BswM) -------------------------------------- */
 
-extern const CommPolicy_VectorModeRequestBindingType CommPolicy_VectorModeRequestBindingTable[];
-extern const uint8 CommPolicy_VectorModeRequestBindingCount;
-
 Std_ReturnType CommPolicy_Adapter_RequestMode(
     CommPolicy_ModeRequestIdType modeRequestId)
 {
     uint8 i;
+
+    /* COMM_POLICY_MODE_REQUEST_NONE is a sentinel value indicating no mode request */
+    if (modeRequestId == COMM_POLICY_MODE_REQUEST_NONE)
+    {
+        return E_OK;
+    }
 
     for (i = 0u; i < CommPolicy_VectorModeRequestBindingCount; i++)
     {

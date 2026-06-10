@@ -132,6 +132,26 @@ void test_adapter_mode_request_adas_only(void)
     TEST_ASSERT_EQUAL_UINT16(2u, CommPolicy_Mock_GetLastModeRequestId());
 }
 
+void test_adapter_mode_request_none(void)
+{
+    CommPolicy_OutputDecisionType decision;
+    CommPolicy_LogicalChannelIdType ch;
+
+    CommPolicy_Mock_Reset();
+
+    for (ch = 0u; ch < COMM_POLICY_CH_NUM; ch++)
+    {
+        decision.targetComMode[ch] = COMM_POLICY_FULL_COMMUNICATION;
+        decision.targetTxGate[ch] = COMM_POLICY_TX_UNBLOCK;
+    }
+    decision.modeRequestId = COMM_POLICY_MODE_REQUEST_NONE;
+    decision.sleepCandidate = FALSE;
+
+    TEST_ASSERT_EQUAL(E_OK, CommPolicy_Adapter_ApplyDecision(&decision));
+    /* COMM_POLICY_MODE_REQUEST_NONE must not trigger a mode request */
+    TEST_ASSERT_EQUAL_UINT8(0u, CommPolicy_Mock_GetModeRequestCallCount());
+}
+
 void test_adapter_request_com_mode_channel_bounds(void)
 {
     CommPolicy_CommModeType mode;

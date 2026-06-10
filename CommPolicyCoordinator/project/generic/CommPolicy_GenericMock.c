@@ -141,6 +141,12 @@ Std_ReturnType CommPolicy_Adapter_RequestComMode(
 Std_ReturnType CommPolicy_Adapter_RequestMode(
     CommPolicy_ModeRequestIdType modeRequestId)
 {
+    /* COMM_POLICY_MODE_REQUEST_NONE is a sentinel value; do not record it */
+    if (modeRequestId == COMM_POLICY_MODE_REQUEST_NONE)
+    {
+        return E_OK;
+    }
+
     CommPolicy_MockState.lastModeRequestId = modeRequestId;
     CommPolicy_MockState.modeRequestCallCount++;
     return E_OK;

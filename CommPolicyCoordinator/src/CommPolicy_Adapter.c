@@ -30,7 +30,7 @@ void CommPolicy_Adapter_Reset(void)
  * the underlying primitives (RequestComMode, RequestMode, BuildInputSnapshot,
  * Enter/ExitExclusiveArea) via GenericMock or VectorAdapter.
  *
- * De-duplication: only calls ComM_RequestComMode when target mode changes,
+ * De-duplication: only calls project RequestComMode primitive when target mode changes,
  * reducing BSW overhead and NM message storms.
  */
 
