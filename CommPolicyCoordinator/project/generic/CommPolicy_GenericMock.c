@@ -112,6 +112,11 @@ Std_ReturnType CommPolicy_Adapter_GetComMode(
     CommPolicy_LogicalChannelIdType ch,
     CommPolicy_CommModeType* mode)
 {
+    if (mode == NULL_PTR)
+    {
+        return E_NOT_OK;
+    }
+
     if (ch < COMM_POLICY_CH_NUM)
     {
         *mode = CommPolicy_MockState.requestedMode[ch];

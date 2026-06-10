@@ -69,21 +69,40 @@ STATIC CommPolicy_CommModeType CommPolicy_VectorAdapter_MapFromComMMode(ComM_Mod
 
 extern const CommPolicy_VectorChannelBindingType CommPolicy_VectorChannelBindingTable[COMM_POLICY_CH_NUM];
 
+STATIC const CommPolicy_VectorChannelBindingType* CommPolicy_Vector_FindChannelBinding(
+    CommPolicy_LogicalChannelIdType logicalChannel)
+{
+    CommPolicy_LogicalChannelIdType i;
+    for (i = 0u; i < COMM_POLICY_CH_NUM; i++)
+    {
+        if (CommPolicy_VectorChannelBindingTable[i].logicalChannel == logicalChannel)
+        {
+            return &CommPolicy_VectorChannelBindingTable[i];
+        }
+    }
+    return NULL_PTR;
+}
+
 Std_ReturnType CommPolicy_Adapter_GetComMode(
     CommPolicy_LogicalChannelIdType ch,
     CommPolicy_CommModeType* mode)
 {
     ComM_ModeType commMode;
     Std_ReturnType ret;
+    const CommPolicy_VectorChannelBindingType* binding;
 
-    if (ch >= COMM_POLICY_CH_NUM)
+    if (mode == NULL_PTR)
     {
         return E_NOT_OK;
     }
 
-    ret = ComM_GetCurrentComMode(
-        CommPolicy_VectorChannelBindingTable[ch].commUser,
-        &commMode);
+    binding = CommPolicy_Vector_FindChannelBinding(ch);
+    if (binding == NULL_PTR)
+    {
+        return E_NOT_OK;
+    }
+
+    ret = ComM_GetCurrentComMode(binding->commUser, &commMode);
 
     if (ret == E_OK)
     {
@@ -98,30 +117,42 @@ Std_ReturnType CommPolicy_Adapter_RequestComMode(
     CommPolicy_CommModeType mode)
 {
     ComM_ModeType commMode;
+    const CommPolicy_VectorChannelBindingType* binding;
 
-    if (ch >= COMM_POLICY_CH_NUM)
+    binding = CommPolicy_Vector_FindChannelBinding(ch);
+    if (binding == NULL_PTR)
     {
         return E_NOT_OK;
     }
 
     commMode = CommPolicy_VectorAdapter_MapToComMMode(mode);
 
-    return ComM_RequestComMode(
-        CommPolicy_VectorChannelBindingTable[ch].commUser,
-        commMode);
+    return ComM_RequestComMode(binding->commUser, commMode);
 }
 
 /* --- Mode Request (mapped to BswM) -------------------------------------- */
 
+extern const CommPolicy_VectorModeRequestBindingType CommPolicy_VectorModeRequestBindingTable[];
+extern const uint8 CommPolicy_VectorModeRequestBindingCount;
+
 Std_ReturnType CommPolicy_Adapter_RequestMode(
     CommPolicy_ModeRequestIdType modeRequestId)
 {
-    /* Project-specific mapping from generic modeRequestId to BswM_RequestMode.
-     * See CommPolicy_VectorCfg.c for mapping table definition.
-     * TODO: replace hard-coded values with generated symbols. */
-    (void)modeRequestId;
-    /* BswM_RequestMode(user, mode); */
-    return E_OK;
+    uint8 i;
+
+    for (i = 0u; i < CommPolicy_VectorModeRequestBindingCount; i++)
+    {
+        if (CommPolicy_VectorModeRequestBindingTable[i].modeRequestId == modeRequestId)
+        {
+            BswM_RequestMode(
+                CommPolicy_VectorModeRequestBindingTable[i].bswmRequestingModule,
+                CommPolicy_VectorModeRequestBindingTable[i].bswmRequestedMode);
+            return E_OK;
+        }
+    }
+
+    /* No binding found for this modeRequestId */
+    return E_NOT_OK;
 }
 
 /* --- Snapshot Builder (Vector project-specific source mapping) ---------- */

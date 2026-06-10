@@ -70,11 +70,17 @@ void test_policy_network_partial_partial_only(void)
 
     TEST_ASSERT_EQUAL(E_OK, CommPolicy_Policy_Evaluate(&input, &decision));
 
-    /* Partial rule: only logical channel 0 gets FULL, others NO */
-    TEST_ASSERT_EQUAL_HEX8(COMM_POLICY_FULL_COMMUNICATION, decision.targetComMode[0u]);
-    TEST_ASSERT_EQUAL_HEX8(COMM_POLICY_TX_UNBLOCK, decision.targetTxGate[0u]);
+    /* Partial rule: fullComMask = CH_MASK(0).
+     * In GenericCfg, table[0].channelMask = CH_MASK(1) and table[1].channelMask = CH_MASK(0).
+     * So CH_MASK(0) matches table[1], NOT table[0].
+     * This verifies Policy_BuildDecisionFromActionSet uses channelMask, not table index. */
+    TEST_ASSERT_EQUAL_HEX8(COMM_POLICY_NO_COMMUNICATION, decision.targetComMode[0u]);
+    TEST_ASSERT_EQUAL_HEX8(COMM_POLICY_TX_BLOCK, decision.targetTxGate[0u]);
 
-    for (ch = 1u; ch < COMM_POLICY_CH_NUM; ch++)
+    TEST_ASSERT_EQUAL_HEX8(COMM_POLICY_FULL_COMMUNICATION, decision.targetComMode[1u]);
+    TEST_ASSERT_EQUAL_HEX8(COMM_POLICY_TX_UNBLOCK, decision.targetTxGate[1u]);
+
+    for (ch = 2u; ch < COMM_POLICY_CH_NUM; ch++)
     {
         TEST_ASSERT_EQUAL_HEX8(COMM_POLICY_NO_COMMUNICATION, decision.targetComMode[ch]);
         TEST_ASSERT_EQUAL_HEX8(COMM_POLICY_TX_BLOCK, decision.targetTxGate[ch]);

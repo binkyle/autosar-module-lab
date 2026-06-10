@@ -87,6 +87,11 @@ void test_adapter_handle_comm_e_not_ok(void)
     TEST_ASSERT_EQUAL(E_NOT_OK, CommPolicy_Adapter_RequestComMode(COMM_POLICY_CH_NUM, COMM_POLICY_FULL_COMMUNICATION));
 }
 
+void test_adapter_get_com_mode_null_ptr(void)
+{
+    TEST_ASSERT_EQUAL(E_NOT_OK, CommPolicy_Adapter_GetComMode(0u, NULL_PTR));
+}
+
 void test_adapter_mode_request_called(void)
 {
     CommPolicy_OutputDecisionType decision;
@@ -105,6 +110,26 @@ void test_adapter_mode_request_called(void)
     TEST_ASSERT_EQUAL(E_OK, CommPolicy_Adapter_ApplyDecision(&decision));
     TEST_ASSERT_EQUAL_UINT8(1u, CommPolicy_Mock_GetModeRequestCallCount());
     TEST_ASSERT_EQUAL_UINT16(1u, CommPolicy_Mock_GetLastModeRequestId());
+}
+
+void test_adapter_mode_request_adas_only(void)
+{
+    CommPolicy_OutputDecisionType decision;
+    CommPolicy_LogicalChannelIdType ch;
+
+    CommPolicy_Mock_Reset();
+
+    for (ch = 0u; ch < COMM_POLICY_CH_NUM; ch++)
+    {
+        decision.targetComMode[ch] = COMM_POLICY_FULL_COMMUNICATION;
+        decision.targetTxGate[ch] = COMM_POLICY_TX_UNBLOCK;
+    }
+    decision.modeRequestId = 2u; /* arbitrary id simulating ADAS_ONLY */
+    decision.sleepCandidate = FALSE;
+
+    TEST_ASSERT_EQUAL(E_OK, CommPolicy_Adapter_ApplyDecision(&decision));
+    TEST_ASSERT_EQUAL_UINT8(1u, CommPolicy_Mock_GetModeRequestCallCount());
+    TEST_ASSERT_EQUAL_UINT16(2u, CommPolicy_Mock_GetLastModeRequestId());
 }
 
 void test_adapter_request_com_mode_channel_bounds(void)

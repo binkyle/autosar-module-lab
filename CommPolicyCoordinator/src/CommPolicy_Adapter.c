@@ -2,6 +2,9 @@
 #include "CommPolicy_Cfg.h"
 #include "CommPolicy_Types.h"
 
+/* --- External Config ---------------------------------------------------- */
+extern const CommPolicy_ChannelConfigType CommPolicy_ChannelConfigTable[COMM_POLICY_CH_NUM];
+
 /* --- Private state for de-duplication ----------------------------------- */
 static CommPolicy_CommModeType lastRequestedMode[COMM_POLICY_CH_NUM];
 static CommPolicy_ModeRequestIdType lastModeRequestId = COMM_POLICY_MODE_REQUEST_NONE;
@@ -51,9 +54,11 @@ Std_ReturnType CommPolicy_Adapter_ApplyDecision(
     /* Apply per-channel ComM mode requests (de-duplicated) */
     for (ch = 0u; ch < COMM_POLICY_CH_NUM; ch++)
     {
+        CommPolicy_LogicalChannelIdType logicalCh = CommPolicy_ChannelConfigTable[ch].logicalChannel;
+
         if (decision->targetComMode[ch] != lastRequestedMode[ch])
         {
-            if (CommPolicy_Adapter_RequestComMode(ch, decision->targetComMode[ch]) == E_OK)
+            if (CommPolicy_Adapter_RequestComMode(logicalCh, decision->targetComMode[ch]) == E_OK)
             {
                 lastRequestedMode[ch] = decision->targetComMode[ch];
             }

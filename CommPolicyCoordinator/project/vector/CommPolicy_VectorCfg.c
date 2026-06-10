@@ -63,7 +63,7 @@ static const CommPolicy_OutputActionSetType CommPolicy_ActionAdasOnly =
     .noComMask      = { .word = { 0x3Eu, 0u } },
     .txUnblockMask  = { .word = { CH_MASK(0u), 0u } },
     .txBlockMask    = { .word = { 0x3Eu, 0u } },
-    .modeRequestId  = VECTOR_MODE_REQ_ALL_FULL,
+    .modeRequestId  = VECTOR_MODE_REQ_ADAS_ONLY,
     .sleepCandidate = FALSE
 };
 
@@ -179,3 +179,24 @@ const CommPolicy_VectorChannelBindingType CommPolicy_VectorChannelBindingTable[C
     { 4u, ComMConf_ComMUser_CN_LIN02_0c2d96c8,          4u },
     { 5u, ComMConf_ComMUser_CN_LIN03_400ext_1856f4be,   5u }
 };
+
+/* --- Vector Mode Request Binding (modeRequestId -> BswM user/mode) ------ */
+typedef struct
+{
+    CommPolicy_ModeRequestIdType modeRequestId;
+    uint8 bswmRequestingModule;
+    uint8 bswmRequestedMode;
+} CommPolicy_VectorModeRequestBindingType;
+
+const CommPolicy_VectorModeRequestBindingType CommPolicy_VectorModeRequestBindingTable[] =
+{
+    { VECTOR_MODE_REQ_ALL_FULL,  0u, 0u },  /* TODO: replace with generated BswM symbols */
+    { VECTOR_MODE_REQ_ADAS_ONLY, 0u, 0u },
+    { VECTOR_MODE_REQ_ALL_NO,    0u, 0u },
+    { VECTOR_MODE_REQ_SLEEP,     0u, 0u }
+};
+
+#define COMM_POLICY_VECTOR_MODE_REQ_BINDING_COUNT \
+    (sizeof(CommPolicy_VectorModeRequestBindingTable) / sizeof(CommPolicy_VectorModeRequestBindingTable[0]))
+
+const uint8 CommPolicy_VectorModeRequestBindingCount = (uint8)COMM_POLICY_VECTOR_MODE_REQ_BINDING_COUNT;

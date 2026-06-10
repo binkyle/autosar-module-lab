@@ -9,6 +9,7 @@
 extern const CommPolicy_PolicyRuleType CommPolicy_PolicyRuleTable[];
 extern const uint8 CommPolicy_PolicyRuleCount;
 extern const CommPolicy_OutputActionSetType* const CommPolicy_FallbackActionSet;
+extern const CommPolicy_ChannelConfigType CommPolicy_ChannelConfigTable[COMM_POLICY_CH_NUM];
 
 /* --- Private Helpers ---------------------------------------------------- */
 
@@ -31,38 +32,40 @@ STATIC void Policy_BuildDecisionFromActionSet(
     const CommPolicy_OutputActionSetType* actionSet,
     CommPolicy_OutputDecisionType* decision)
 {
-    CommPolicy_LogicalChannelIdType ch;
+    CommPolicy_LogicalChannelIdType i;
 
-    for (ch = 0u; ch < COMM_POLICY_CH_NUM; ch++)
+    for (i = 0u; i < COMM_POLICY_CH_NUM; i++)
     {
+        const CommPolicy_ChannelMaskType* chMask = &CommPolicy_ChannelConfigTable[i].channelMask;
+
         /* Evaluate ComM mode: fullComMask takes priority over noComMask */
-        if (CommPolicy_ChannelMask_IsSet(&actionSet->fullComMask, ch) == TRUE)
+        if (CommPolicy_ChannelMask_IsAnySet(&actionSet->fullComMask, chMask) == TRUE)
         {
-            decision->targetComMode[ch] = COMM_POLICY_FULL_COMMUNICATION;
+            decision->targetComMode[i] = COMM_POLICY_FULL_COMMUNICATION;
         }
-        else if (CommPolicy_ChannelMask_IsSet(&actionSet->noComMask, ch) == TRUE)
+        else if (CommPolicy_ChannelMask_IsAnySet(&actionSet->noComMask, chMask) == TRUE)
         {
-            decision->targetComMode[ch] = COMM_POLICY_NO_COMMUNICATION;
+            decision->targetComMode[i] = COMM_POLICY_NO_COMMUNICATION;
         }
         else
         {
             /* Default safe state if neither mask is set: NO_COMMUNICATION */
-            decision->targetComMode[ch] = COMM_POLICY_NO_COMMUNICATION;
+            decision->targetComMode[i] = COMM_POLICY_NO_COMMUNICATION;
         }
 
         /* Evaluate Tx gate: txUnblockMask takes priority over txBlockMask */
-        if (CommPolicy_ChannelMask_IsSet(&actionSet->txUnblockMask, ch) == TRUE)
+        if (CommPolicy_ChannelMask_IsAnySet(&actionSet->txUnblockMask, chMask) == TRUE)
         {
-            decision->targetTxGate[ch] = COMM_POLICY_TX_UNBLOCK;
+            decision->targetTxGate[i] = COMM_POLICY_TX_UNBLOCK;
         }
-        else if (CommPolicy_ChannelMask_IsSet(&actionSet->txBlockMask, ch) == TRUE)
+        else if (CommPolicy_ChannelMask_IsAnySet(&actionSet->txBlockMask, chMask) == TRUE)
         {
-            decision->targetTxGate[ch] = COMM_POLICY_TX_BLOCK;
+            decision->targetTxGate[i] = COMM_POLICY_TX_BLOCK;
         }
         else
         {
             /* Default safe state: BLOCK */
-            decision->targetTxGate[ch] = COMM_POLICY_TX_BLOCK;
+            decision->targetTxGate[i] = COMM_POLICY_TX_BLOCK;
         }
     }
 

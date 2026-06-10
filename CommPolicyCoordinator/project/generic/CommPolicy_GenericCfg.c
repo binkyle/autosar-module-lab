@@ -135,19 +135,19 @@ const CommPolicy_OutputActionSetType* const CommPolicy_FallbackActionSet = &Comm
 /* Generic example: mixed CAN / LIN / ETH channels for cross-bus demo */
 const CommPolicy_ChannelConfigType CommPolicy_ChannelConfigTable[COMM_POLICY_CH_NUM] =
 {
-    /* Logical 0: CAN backbone */
+    /* Logical 0: CAN backbone (channelMask bit 1, decoupled from index) */
     {
         .logicalChannel = 0u,
         .busType        = COMM_POLICY_BUS_CAN,
-        .channelMask    = { .word = { CH_MASK(0u), 0u } },
-        .groupMask      = { .word = { CH_MASK(0u), 0u } }
+        .channelMask    = { .word = { CH_MASK(1u), 0u } },
+        .groupMask      = { .word = { CH_MASK(1u), 0u } }
     },
-    /* Logical 1: CAN secondary */
+    /* Logical 1: CAN secondary (channelMask bit 0, decoupled from index) */
     {
         .logicalChannel = 1u,
         .busType        = COMM_POLICY_BUS_CAN,
-        .channelMask    = { .word = { CH_MASK(1u), 0u } },
-        .groupMask      = { .word = { CH_MASK(1u), 0u } }
+        .channelMask    = { .word = { CH_MASK(0u), 0u } },
+        .groupMask      = { .word = { CH_MASK(0u), 0u } }
     },
     /* Logical 2: LIN body */
     {
