@@ -33,7 +33,7 @@ void test_policy_power_run_all_full(void)
 
     for (ch = 0u; ch < COMM_POLICY_CH_NUM; ch++)
     {
-        TEST_ASSERT_EQUAL_HEX8(COMM_FULL_COMMUNICATION, decision.targetComMode[ch]);
+        TEST_ASSERT_EQUAL_HEX8(COMM_POLICY_FULL_COMMUNICATION, decision.targetComMode[ch]);
         TEST_ASSERT_EQUAL_HEX8(COMM_POLICY_TX_UNBLOCK, decision.targetTxGate[ch]);
     }
     TEST_ASSERT_FALSE(decision.sleepCandidate);
@@ -53,7 +53,7 @@ void test_policy_network_global_all_full(void)
 
     for (ch = 0u; ch < COMM_POLICY_CH_NUM; ch++)
     {
-        TEST_ASSERT_EQUAL_HEX8(COMM_FULL_COMMUNICATION, decision.targetComMode[ch]);
+        TEST_ASSERT_EQUAL_HEX8(COMM_POLICY_FULL_COMMUNICATION, decision.targetComMode[ch]);
     }
     TEST_ASSERT_FALSE(decision.sleepCandidate);
 }
@@ -71,12 +71,12 @@ void test_policy_network_partial_partial_only(void)
     TEST_ASSERT_EQUAL(E_OK, CommPolicy_Policy_Evaluate(&input, &decision));
 
     /* Partial rule: only logical channel 0 gets FULL, others NO */
-    TEST_ASSERT_EQUAL_HEX8(COMM_FULL_COMMUNICATION, decision.targetComMode[0u]);
+    TEST_ASSERT_EQUAL_HEX8(COMM_POLICY_FULL_COMMUNICATION, decision.targetComMode[0u]);
     TEST_ASSERT_EQUAL_HEX8(COMM_POLICY_TX_UNBLOCK, decision.targetTxGate[0u]);
 
     for (ch = 1u; ch < COMM_POLICY_CH_NUM; ch++)
     {
-        TEST_ASSERT_EQUAL_HEX8(COMM_NO_COMMUNICATION, decision.targetComMode[ch]);
+        TEST_ASSERT_EQUAL_HEX8(COMM_POLICY_NO_COMMUNICATION, decision.targetComMode[ch]);
         TEST_ASSERT_EQUAL_HEX8(COMM_POLICY_TX_BLOCK, decision.targetTxGate[ch]);
     }
     TEST_ASSERT_FALSE(decision.sleepCandidate);
@@ -95,7 +95,7 @@ void test_policy_diag_keep_all_full(void)
 
     for (ch = 0u; ch < COMM_POLICY_CH_NUM; ch++)
     {
-        TEST_ASSERT_EQUAL_HEX8(COMM_FULL_COMMUNICATION, decision.targetComMode[ch]);
+        TEST_ASSERT_EQUAL_HEX8(COMM_POLICY_FULL_COMMUNICATION, decision.targetComMode[ch]);
     }
     TEST_ASSERT_FALSE(decision.sleepCandidate);
 }
@@ -112,7 +112,7 @@ void test_policy_no_source_all_no(void)
 
     for (ch = 0u; ch < COMM_POLICY_CH_NUM; ch++)
     {
-        TEST_ASSERT_EQUAL_HEX8(COMM_NO_COMMUNICATION, decision.targetComMode[ch]);
+        TEST_ASSERT_EQUAL_HEX8(COMM_POLICY_NO_COMMUNICATION, decision.targetComMode[ch]);
         TEST_ASSERT_EQUAL_HEX8(COMM_POLICY_TX_BLOCK, decision.targetTxGate[ch]);
     }
     TEST_ASSERT_TRUE(decision.sleepCandidate);
@@ -148,7 +148,7 @@ void test_policy_priority_power_beats_network(void)
 
     for (ch = 0u; ch < COMM_POLICY_CH_NUM; ch++)
     {
-        TEST_ASSERT_EQUAL_HEX8(COMM_FULL_COMMUNICATION, decision.targetComMode[ch]);
+        TEST_ASSERT_EQUAL_HEX8(COMM_POLICY_FULL_COMMUNICATION, decision.targetComMode[ch]);
     }
     TEST_ASSERT_FALSE(decision.sleepCandidate);
 }
@@ -170,7 +170,7 @@ void test_policy_multi_source_any_match(void)
 
     for (ch = 0u; ch < COMM_POLICY_CH_NUM; ch++)
     {
-        TEST_ASSERT_EQUAL_HEX8(COMM_FULL_COMMUNICATION, decision.targetComMode[ch]);
+        TEST_ASSERT_EQUAL_HEX8(COMM_POLICY_FULL_COMMUNICATION, decision.targetComMode[ch]);
     }
     TEST_ASSERT_FALSE(decision.sleepCandidate);
 }
@@ -197,7 +197,7 @@ void test_policy_same_priority_first_match_wins(void)
     /* NETWORK_GLOBAL rule (priority 90) should win over NETWORK_PARTIAL (priority 80) */
     for (ch = 0u; ch < COMM_POLICY_CH_NUM; ch++)
     {
-        TEST_ASSERT_EQUAL_HEX8(COMM_FULL_COMMUNICATION, decision.targetComMode[ch]);
+        TEST_ASSERT_EQUAL_HEX8(COMM_POLICY_FULL_COMMUNICATION, decision.targetComMode[ch]);
     }
 }
 
@@ -217,6 +217,6 @@ void test_policy_fallback_when_no_rule_matches(void)
     /* Fallback is ALL_FULL per configuration */
     for (ch = 0u; ch < COMM_POLICY_CH_NUM; ch++)
     {
-        TEST_ASSERT_EQUAL_HEX8(COMM_FULL_COMMUNICATION, decision.targetComMode[ch]);
+        TEST_ASSERT_EQUAL_HEX8(COMM_POLICY_FULL_COMMUNICATION, decision.targetComMode[ch]);
     }
 }

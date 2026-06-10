@@ -3,7 +3,7 @@
 #include "CommPolicy_Types.h"
 
 /* --- Private state for de-duplication ----------------------------------- */
-static ComM_ModeType lastRequestedMode[COMM_POLICY_CH_NUM];
+static CommPolicy_CommModeType lastRequestedMode[COMM_POLICY_CH_NUM];
 static CommPolicy_ModeRequestIdType lastModeRequestId = COMM_POLICY_MODE_REQUEST_NONE;
 static boolean initialized = FALSE;
 
@@ -14,7 +14,7 @@ void CommPolicy_Adapter_Reset(void)
     CommPolicy_LogicalChannelIdType ch;
     for (ch = 0u; ch < COMM_POLICY_CH_NUM; ch++)
     {
-        lastRequestedMode[ch] = COMM_NO_COMMUNICATION;
+        lastRequestedMode[ch] = COMM_POLICY_NO_COMMUNICATION;
     }
     lastModeRequestId = COMM_POLICY_MODE_REQUEST_NONE;
     initialized = TRUE;

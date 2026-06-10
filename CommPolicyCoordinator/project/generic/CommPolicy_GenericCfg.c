@@ -2,7 +2,6 @@
 #include "CommPolicy_Types.h"
 #include "CommPolicy_SourceMask.h"
 #include "CommPolicy_ChannelMask.h"
-#include "ComM.h"
 
 /* --- Generic Example Source IDs ----------------------------------------- */
 /* These are EXAMPLE definitions for host testing. Project-specific IDs
@@ -140,8 +139,6 @@ const CommPolicy_ChannelConfigType CommPolicy_ChannelConfigTable[COMM_POLICY_CH_
     {
         .logicalChannel = 0u,
         .busType        = COMM_POLICY_BUS_CAN,
-        .commUser       = 0u,
-        .networkHandle  = 0u,
         .channelMask    = { .word = { CH_MASK(0u), 0u } },
         .groupMask      = { .word = { CH_MASK(0u), 0u } }
     },
@@ -149,8 +146,6 @@ const CommPolicy_ChannelConfigType CommPolicy_ChannelConfigTable[COMM_POLICY_CH_
     {
         .logicalChannel = 1u,
         .busType        = COMM_POLICY_BUS_CAN,
-        .commUser       = 1u,
-        .networkHandle  = 1u,
         .channelMask    = { .word = { CH_MASK(1u), 0u } },
         .groupMask      = { .word = { CH_MASK(1u), 0u } }
     },
@@ -158,8 +153,6 @@ const CommPolicy_ChannelConfigType CommPolicy_ChannelConfigTable[COMM_POLICY_CH_
     {
         .logicalChannel = 2u,
         .busType        = COMM_POLICY_BUS_LIN,
-        .commUser       = 2u,
-        .networkHandle  = 2u,
         .channelMask    = { .word = { CH_MASK(2u), 0u } },
         .groupMask      = { .word = { CH_MASK(2u), 0u } }
     },
@@ -167,8 +160,6 @@ const CommPolicy_ChannelConfigType CommPolicy_ChannelConfigTable[COMM_POLICY_CH_
     {
         .logicalChannel = 3u,
         .busType        = COMM_POLICY_BUS_LIN,
-        .commUser       = 3u,
-        .networkHandle  = 3u,
         .channelMask    = { .word = { CH_MASK(3u), 0u } },
         .groupMask      = { .word = { CH_MASK(3u), 0u } }
     },
@@ -176,8 +167,6 @@ const CommPolicy_ChannelConfigType CommPolicy_ChannelConfigTable[COMM_POLICY_CH_
     {
         .logicalChannel = 4u,
         .busType        = COMM_POLICY_BUS_ETH,
-        .commUser       = 4u,
-        .networkHandle  = 4u,
         .channelMask    = { .word = { CH_MASK(4u), 0u } },
         .groupMask      = { .word = { CH_MASK(4u), 0u } }
     },
@@ -185,8 +174,6 @@ const CommPolicy_ChannelConfigType CommPolicy_ChannelConfigTable[COMM_POLICY_CH_
     {
         .logicalChannel = 5u,
         .busType        = COMM_POLICY_BUS_USER,
-        .commUser       = 5u,
-        .networkHandle  = 5u,
         .channelMask    = { .word = { CH_MASK(5u), 0u } },
         .groupMask      = { .word = { CH_MASK(5u), 0u } }
     }

@@ -3,7 +3,6 @@
 
 #include "Std_Types.h"
 #include "CommPolicy_Cfg.h"
-#include "ComM.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,6 +44,14 @@ typedef struct
 #endif
 
 #endif /* COMM_POLICY_ENABLE_SOURCE_CONFIG_TABLE */
+
+/* --- Communication Mode (core abstraction, independent from ComM) ------- */
+typedef enum
+{
+    COMM_POLICY_NO_COMMUNICATION = 0,
+    COMM_POLICY_SILENT_COMMUNICATION,
+    COMM_POLICY_FULL_COMMUNICATION
+} CommPolicy_CommModeType;
 
 /* --- Tx Gate ------------------------------------------------------------ */
 typedef enum
@@ -92,7 +99,7 @@ typedef struct
 /* --- Output Decision ---------------------------------------------------- */
 typedef struct
 {
-    ComM_ModeType targetComMode[COMM_POLICY_CH_NUM];
+    CommPolicy_CommModeType targetComMode[COMM_POLICY_CH_NUM];
     CommPolicy_AppTxGateType targetTxGate[COMM_POLICY_CH_NUM];
     CommPolicy_ModeRequestIdType modeRequestId;
     boolean sleepCandidate;
@@ -103,8 +110,6 @@ typedef struct
 {
     CommPolicy_LogicalChannelIdType logicalChannel;
     CommPolicy_BusType busType;
-    ComM_UserHandleType commUser;
-    NetworkHandleType networkHandle;
     CommPolicy_ChannelMaskType channelMask;   /* Mask with single bit identifying this channel */
     CommPolicy_ChannelMaskType groupMask;     /* Mask for channel grouping */
 } CommPolicy_ChannelConfigType;

@@ -6,6 +6,7 @@
 - [ ] 确认所有通信通道已配置 ComM User
 - [ ] 确认 `ComM_RequestComMode` 可用于请求的 User
 - [ ] 检查 PNC 映射（如果已启用 ComM PNC）
+- [ ] 在 `project/vector/CommPolicy_VectorCfg.c` 中配置 `CommPolicy_VectorChannelBindingTable`，将每个逻辑通道映射到对应的 ComM User 和 Network Handle
 
 ### Nm / CanNm / LinNm / EthNm
 - [ ] 确认对应总线的 PN 功能已正确配置（如使用 Partial Network）
@@ -43,7 +44,7 @@
 3. 将 `CommPolicyCoordinator/project/vector/CommPolicy_VectorAdapter.c` 加入编译
 4. 移除 `CommPolicyCoordinator/project/generic/CommPolicy_GenericMock.c`
 5. **必须移除** `CommPolicyCoordinator/stub/BSW/` 的 include path（stub 仅用于 host 单元测试）
-6. **禁止**在 `src/` 或 `include/` 中引用任何 DaVinci 生成符号；唯一允许的位置是 `project/vector/CommPolicy_VectorAdapter.c` 和 `project/vector/CommPolicy_VectorCfg.c`
+6. **禁止**在 `src/` 或 `include/` 中引用任何 DaVinci 生成符号；唯一允许引用 ComM 类型和符号的位置是 `project/vector/CommPolicy_VectorAdapter.c` 和 `project/vector/CommPolicy_VectorCfg.c`（通过 `CommPolicy_VectorChannelBindingTable`）
 
 ### Adapter 选择机制（无 weak symbol）
 

@@ -67,7 +67,7 @@ BSW 不能完整表达的项目组合策略，才放到 CommPolicyCoordinator；
 2. **Snapshot Build**: App 层将输入组装为 `CommPolicy_InputSnapshotType`，内部使用 `CommPolicy_SourceMaskType`（multi-word bitset）表示激活源集合
 3. **Policy Evaluate**: 查表引擎根据 `priority + requiredAllMask + requiredAnyMask + forbiddenMask` 匹配最佳规则，得到 `CommPolicy_OutputActionSetType`
 4. **Decision Build**: Policy 引擎根据 `ActionSet` 中的 `ChannelMask` 生成 `CommPolicy_OutputDecisionType`
-5. **Decision Apply**: Adapter 将决策转换为 ComM_RequestComMode、BswM_RequestMode 等调用
+5. **Decision Apply**: `CommPolicy_VectorAdapter.c` 通过 `CommPolicy_VectorChannelBindingTable` 将逻辑通道映射到 ComM User，并将核心 `CommPolicy_CommModeType` 映射为 `ComM_ModeType` 后调用 `ComM_RequestComMode`；`BswM_RequestMode` 等通过项目配置输出
 6. **Debug Update**: 记录最近一次输入与决策，用于诊断
 
 ### 为什么引入 ActionSet
@@ -83,10 +83,28 @@ BSW 不能完整表达的项目组合策略，才放到 CommPolicyCoordinator；
 |------|---------|---------------------------|
 | PNI/PNC bit 识别 | CanNm / Nm / ComM | 不解析，由 BSW 上报 source 状态 |
 | PNC 状态机 | ComM | 读取 ComM 模式，不替代 |
-| 通道模式请求 | ComM | 通过 Adapter 调用 ComM_RequestComMode |
+| 通道模式请求 | ComM | `VectorAdapter` 通过 `VectorChannelBindingTable` 调用 `ComM_RequestComMode`；核心框架只操作 `CommPolicy_CommModeType` |
 | I-PDU Group 控制 | Com + BswM ActionList | 建议迁移到 BswM，不直接调用 Com_IpduGroupStart/Stop |
 | Nm Enable/Disable | Nm | 建议迁移到 BswM ActionList |
 | Sleep/ShutDown | EcuM + BswM | 只输出 sleepCandidate，不直接操作 EcuM |
+
+## 核心类型与 ComM 解耦
+
+核心框架定义独立的 `CommPolicy_CommModeType`：
+
+```c
+typedef enum
+{
+    COMM_POLICY_NO_COMMUNICATION = 0,
+    COMM_POLICY_SILENT_COMMUNICATION,
+    COMM_POLICY_FULL_COMMUNICATION
+} CommPolicy_CommModeType;
+```
+
+- **核心 `include/` 和 `src/` 不引用 `ComM.h`**，也不使用 `ComM_ModeType`、`ComM_UserHandleType` 或 `NetworkHandleType`
+- `CommPolicy_VectorAdapter.c` 负责双向映射：`CommPolicy_CommModeType` ↔ `ComM_ModeType`
+- `CommPolicy_VectorChannelBindingTable` 保存逻辑通道到 ComM User / Network Handle 的映射，使 `ChannelConfigType` 保持零 BSW 依赖
+- Host 测试和 generic 项目无需 ComM stub 即可编译和运行
 
 ## 为什么不能直接复刻 CanServer
 

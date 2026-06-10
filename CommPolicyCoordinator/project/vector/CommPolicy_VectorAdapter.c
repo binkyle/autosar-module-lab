@@ -1,3 +1,4 @@
+#include "Compiler.h"
 #include "CommPolicy_Adapter.h"
 #include "CommPolicy_Cfg.h"
 #include "CommPolicy_Types.h"
@@ -40,29 +41,39 @@ void CommPolicy_Adapter_ExitExclusiveArea(void)
     SchM_Exit_CommPolicyCoordinator_CommPolicyExclusiveArea();
 }
 
+/* --- CommMode Mapping (core -> ComM) ------------------------------------ */
+
+STATIC ComM_ModeType CommPolicy_VectorAdapter_MapToComMMode(CommPolicy_CommModeType mode)
+{
+    switch (mode)
+    {
+        case COMM_POLICY_NO_COMMUNICATION:      return COMM_NO_COMMUNICATION;
+        case COMM_POLICY_SILENT_COMMUNICATION:  return COMM_SILENT_COMMUNICATION;
+        case COMM_POLICY_FULL_COMMUNICATION:    return COMM_FULL_COMMUNICATION;
+        default:                                return COMM_NO_COMMUNICATION;
+    }
+}
+
+STATIC CommPolicy_CommModeType CommPolicy_VectorAdapter_MapFromComMMode(ComM_ModeType mode)
+{
+    switch (mode)
+    {
+        case COMM_NO_COMMUNICATION:     return COMM_POLICY_NO_COMMUNICATION;
+        case COMM_SILENT_COMMUNICATION: return COMM_POLICY_SILENT_COMMUNICATION;
+        case COMM_FULL_COMMUNICATION:   return COMM_POLICY_FULL_COMMUNICATION;
+        default:                        return COMM_POLICY_NO_COMMUNICATION;
+    }
+}
+
 /* --- ComM Mode ---------------------------------------------------------- */
+
+extern const CommPolicy_VectorChannelBindingType CommPolicy_VectorChannelBindingTable[COMM_POLICY_CH_NUM];
 
 Std_ReturnType CommPolicy_Adapter_GetComMode(
     CommPolicy_LogicalChannelIdType ch,
-    ComM_ModeType* mode)
+    CommPolicy_CommModeType* mode)
 {
-    extern const CommPolicy_ChannelConfigType CommPolicy_ChannelConfigTable[COMM_POLICY_CH_NUM];
-
-    if (ch >= COMM_POLICY_CH_NUM)
-    {
-        return E_NOT_OK;
-    }
-
-    return ComM_GetCurrentComMode(
-        CommPolicy_ChannelConfigTable[ch].commUser,
-        mode);
-}
-
-Std_ReturnType CommPolicy_Adapter_RequestComMode(
-    CommPolicy_LogicalChannelIdType ch,
-    ComM_ModeType mode)
-{
-    extern const CommPolicy_ChannelConfigType CommPolicy_ChannelConfigTable[COMM_POLICY_CH_NUM];
+    ComM_ModeType commMode;
     Std_ReturnType ret;
 
     if (ch >= COMM_POLICY_CH_NUM)
@@ -70,11 +81,34 @@ Std_ReturnType CommPolicy_Adapter_RequestComMode(
         return E_NOT_OK;
     }
 
-    ret = ComM_RequestComMode(
-        CommPolicy_ChannelConfigTable[ch].commUser,
-        mode);
+    ret = ComM_GetCurrentComMode(
+        CommPolicy_VectorChannelBindingTable[ch].commUser,
+        &commMode);
+
+    if (ret == E_OK)
+    {
+        *mode = CommPolicy_VectorAdapter_MapFromComMMode(commMode);
+    }
 
     return ret;
+}
+
+Std_ReturnType CommPolicy_Adapter_RequestComMode(
+    CommPolicy_LogicalChannelIdType ch,
+    CommPolicy_CommModeType mode)
+{
+    ComM_ModeType commMode;
+
+    if (ch >= COMM_POLICY_CH_NUM)
+    {
+        return E_NOT_OK;
+    }
+
+    commMode = CommPolicy_VectorAdapter_MapToComMMode(mode);
+
+    return ComM_RequestComMode(
+        CommPolicy_VectorChannelBindingTable[ch].commUser,
+        commMode);
 }
 
 /* --- Mode Request (mapped to BswM) -------------------------------------- */

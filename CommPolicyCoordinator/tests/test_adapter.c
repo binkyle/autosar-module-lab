@@ -39,7 +39,7 @@ void test_adapter_request_com_mode_called_when_target_differs(void)
 
     for (ch = 0u; ch < COMM_POLICY_CH_NUM; ch++)
     {
-        decision.targetComMode[ch] = COMM_FULL_COMMUNICATION;
+        decision.targetComMode[ch] = COMM_POLICY_FULL_COMMUNICATION;
         decision.targetTxGate[ch] = COMM_POLICY_TX_UNBLOCK;
     }
     decision.modeRequestId = 0u; /* EXAMPLE_MODE_REQ_ALL_FULL */
@@ -64,7 +64,7 @@ void test_adapter_no_repeat_request_when_target_same(void)
 
     for (ch = 0u; ch < COMM_POLICY_CH_NUM; ch++)
     {
-        decision.targetComMode[ch] = COMM_FULL_COMMUNICATION;
+        decision.targetComMode[ch] = COMM_POLICY_FULL_COMMUNICATION;
         decision.targetTxGate[ch] = COMM_POLICY_TX_UNBLOCK;
     }
     decision.modeRequestId = 0u; /* EXAMPLE_MODE_REQ_ALL_FULL */
@@ -81,10 +81,10 @@ void test_adapter_no_repeat_request_when_target_same(void)
 
 void test_adapter_handle_comm_e_not_ok(void)
 {
-    ComM_ModeType mode;
+    CommPolicy_CommModeType mode;
 
     TEST_ASSERT_EQUAL(E_NOT_OK, CommPolicy_Adapter_GetComMode(COMM_POLICY_CH_NUM, &mode));
-    TEST_ASSERT_EQUAL(E_NOT_OK, CommPolicy_Adapter_RequestComMode(COMM_POLICY_CH_NUM, COMM_FULL_COMMUNICATION));
+    TEST_ASSERT_EQUAL(E_NOT_OK, CommPolicy_Adapter_RequestComMode(COMM_POLICY_CH_NUM, COMM_POLICY_FULL_COMMUNICATION));
 }
 
 void test_adapter_mode_request_called(void)
@@ -96,7 +96,7 @@ void test_adapter_mode_request_called(void)
 
     for (ch = 0u; ch < COMM_POLICY_CH_NUM; ch++)
     {
-        decision.targetComMode[ch] = COMM_FULL_COMMUNICATION;
+        decision.targetComMode[ch] = COMM_POLICY_FULL_COMMUNICATION;
         decision.targetTxGate[ch] = COMM_POLICY_TX_UNBLOCK;
     }
     decision.modeRequestId = 1u; /* EXAMPLE_MODE_REQ_ALL_NO */
@@ -109,10 +109,10 @@ void test_adapter_mode_request_called(void)
 
 void test_adapter_request_com_mode_channel_bounds(void)
 {
-    ComM_ModeType mode;
+    CommPolicy_CommModeType mode;
 
     /* Channel out of bounds must return E_NOT_OK */
-    TEST_ASSERT_EQUAL(E_NOT_OK, CommPolicy_Adapter_RequestComMode(COMM_POLICY_CH_NUM, COMM_FULL_COMMUNICATION));
+    TEST_ASSERT_EQUAL(E_NOT_OK, CommPolicy_Adapter_RequestComMode(COMM_POLICY_CH_NUM, COMM_POLICY_FULL_COMMUNICATION));
     TEST_ASSERT_EQUAL(E_NOT_OK, CommPolicy_Adapter_GetComMode(COMM_POLICY_CH_NUM, &mode));
 }
 

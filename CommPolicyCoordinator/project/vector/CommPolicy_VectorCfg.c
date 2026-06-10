@@ -125,49 +125,57 @@ const CommPolicy_ChannelConfigType CommPolicy_ChannelConfigTable[COMM_POLICY_CH_
     {
         .logicalChannel = 0u,
         .busType        = COMM_POLICY_BUS_CAN,
-        .commUser       = ComMConf_ComMUser_CN_Backbone2_4e435fd4,
-        .networkHandle  = 0u,
         .channelMask    = { .word = { CH_MASK(0u), 0u } },
         .groupMask      = { .word = { CH_MASK(0u), 0u } }
     },
     {
         .logicalChannel = 1u,
         .busType        = COMM_POLICY_BUS_CAN,
-        .commUser       = ComMConf_ComMUser_CN_Backbone2_4e435fd4_RX,
-        .networkHandle  = 1u,
         .channelMask    = { .word = { CH_MASK(1u), 0u } },
         .groupMask      = { .word = { CH_MASK(1u), 0u } }
     },
     {
         .logicalChannel = 2u,
         .busType        = COMM_POLICY_BUS_LIN,
-        .commUser       = ComMConf_ComMUser_CN_LIN00_06e61e65,
-        .networkHandle  = 2u,
         .channelMask    = { .word = { CH_MASK(2u), 0u } },
         .groupMask      = { .word = { CH_MASK(2u), 0u } }
     },
     {
         .logicalChannel = 3u,
         .busType        = COMM_POLICY_BUS_LIN,
-        .commUser       = ComMConf_ComMUser_CN_LIN01_3ff1080c,
-        .networkHandle  = 3u,
         .channelMask    = { .word = { CH_MASK(3u), 0u } },
         .groupMask      = { .word = { CH_MASK(3u), 0u } }
     },
     {
         .logicalChannel = 4u,
         .busType        = COMM_POLICY_BUS_CAN,
-        .commUser       = ComMConf_ComMUser_CN_LIN02_0c2d96c8,
-        .networkHandle  = 4u,
         .channelMask    = { .word = { CH_MASK(4u), 0u } },
         .groupMask      = { .word = { CH_MASK(4u), 0u } }
     },
     {
         .logicalChannel = 5u,
         .busType        = COMM_POLICY_BUS_CAN,
-        .commUser       = ComMConf_ComMUser_CN_LIN03_400ext_1856f4be,
-        .networkHandle  = 5u,
         .channelMask    = { .word = { CH_MASK(5u), 0u } },
         .groupMask      = { .word = { CH_MASK(5u), 0u } }
     }
+};
+
+/* --- Vector Channel Binding (logicalChannel -> ComM User/NetworkHandle) - */
+/* This table is project-specific and lives in the Vector binding layer.
+ * Core framework does NOT contain ComM_UserHandleType or NetworkHandleType. */
+typedef struct
+{
+    CommPolicy_LogicalChannelIdType logicalChannel;
+    ComM_UserHandleType commUser;
+    NetworkHandleType networkHandle;
+} CommPolicy_VectorChannelBindingType;
+
+const CommPolicy_VectorChannelBindingType CommPolicy_VectorChannelBindingTable[COMM_POLICY_CH_NUM] =
+{
+    { 0u, ComMConf_ComMUser_CN_Backbone2_4e435fd4,      0u },
+    { 1u, ComMConf_ComMUser_CN_Backbone2_4e435fd4_RX,   1u },
+    { 2u, ComMConf_ComMUser_CN_LIN00_06e61e65,          2u },
+    { 3u, ComMConf_ComMUser_CN_LIN01_3ff1080c,          3u },
+    { 4u, ComMConf_ComMUser_CN_LIN02_0c2d96c8,          4u },
+    { 5u, ComMConf_ComMUser_CN_LIN03_400ext_1856f4be,   5u }
 };

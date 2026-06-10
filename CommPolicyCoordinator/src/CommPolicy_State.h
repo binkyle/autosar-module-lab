@@ -14,7 +14,7 @@ typedef struct
     CommPolicy_SourceMaskType activeSourceMask;  /* Sources managed by State layer */
     uint16 holdTimerTicks;
     CommPolicy_OutputDecisionType lastDecision;
-    ComM_ModeType lastAppliedMode[COMM_POLICY_CH_NUM];
+    CommPolicy_CommModeType lastAppliedMode[COMM_POLICY_CH_NUM];
 } CommPolicy_RuntimeStateType;
 
 /* --- API ---------------------------------------------------------------- */

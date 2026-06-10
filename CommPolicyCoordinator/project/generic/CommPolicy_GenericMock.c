@@ -15,7 +15,7 @@ typedef struct
 {
     CommPolicy_SourceMaskType activeSourceMask;
 
-    ComM_ModeType requestedMode[COMM_POLICY_CH_NUM];
+    CommPolicy_CommModeType requestedMode[COMM_POLICY_CH_NUM];
     uint8 requestComModeCallCount[COMM_POLICY_CH_NUM];
     CommPolicy_ModeRequestIdType lastModeRequestId;
     uint8 modeRequestCallCount;
@@ -36,7 +36,7 @@ void CommPolicy_Mock_Reset(void)
 
     for (ch = 0u; ch < COMM_POLICY_CH_NUM; ch++)
     {
-        CommPolicy_MockState.requestedMode[ch] = COMM_NO_COMMUNICATION;
+        CommPolicy_MockState.requestedMode[ch] = COMM_POLICY_NO_COMMUNICATION;
         CommPolicy_MockState.requestComModeCallCount[ch] = 0u;
     }
 
@@ -68,13 +68,13 @@ const CommPolicy_SourceMaskType* CommPolicy_Mock_GetActiveSourceMask(void)
     return &CommPolicy_MockState.activeSourceMask;
 }
 
-ComM_ModeType CommPolicy_Mock_GetRequestedMode(CommPolicy_LogicalChannelIdType ch)
+CommPolicy_CommModeType CommPolicy_Mock_GetRequestedMode(CommPolicy_LogicalChannelIdType ch)
 {
     if (ch < COMM_POLICY_CH_NUM)
     {
         return CommPolicy_MockState.requestedMode[ch];
     }
-    return COMM_NO_COMMUNICATION;
+    return COMM_POLICY_NO_COMMUNICATION;
 }
 
 uint8 CommPolicy_Mock_GetRequestComModeCallCount(CommPolicy_LogicalChannelIdType ch)
@@ -110,7 +110,7 @@ boolean CommPolicy_Mock_GetExclusiveAreaExited(void)
 
 Std_ReturnType CommPolicy_Adapter_GetComMode(
     CommPolicy_LogicalChannelIdType ch,
-    ComM_ModeType* mode)
+    CommPolicy_CommModeType* mode)
 {
     if (ch < COMM_POLICY_CH_NUM)
     {
@@ -122,7 +122,7 @@ Std_ReturnType CommPolicy_Adapter_GetComMode(
 
 Std_ReturnType CommPolicy_Adapter_RequestComMode(
     CommPolicy_LogicalChannelIdType ch,
-    ComM_ModeType mode)
+    CommPolicy_CommModeType mode)
 {
     if (ch < COMM_POLICY_CH_NUM)
     {

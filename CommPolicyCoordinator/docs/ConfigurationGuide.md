@@ -16,8 +16,6 @@ const CommPolicy_ChannelConfigType CommPolicy_ChannelConfigTable[COMM_POLICY_CH_
     {
         .logicalChannel = 0u,
         .busType        = COMM_POLICY_BUS_CAN,
-        .commUser       = 0u,
-        .networkHandle  = 0u,
         .channelMask    = { .word = { CH_MASK(0u), 0u } },
         .groupMask      = { .word = { CH_MASK(0u), 0u } }
     },
@@ -29,12 +27,38 @@ const CommPolicy_ChannelConfigType CommPolicy_ChannelConfigTable[COMM_POLICY_CH_
 |------|------|
 | `logicalChannel` | 逻辑通道 ID |
 | `busType` | 总线类型（CAN / LIN / ETH / FR / USER） |
-| `commUser` | ComM User Handle |
-| `networkHandle` | Network Handle |
 | `channelMask` | 通道唯一 `ChannelMask`（单 bit） |
 | `groupMask` | 通道分组 mask（可用于批量策略） |
 
 禁止在 Policy 或 State 中硬编码通道索引。
+
+## Vector 项目：通道绑定配置（VectorChannelBinding）
+
+核心 `CommPolicy_ChannelConfigType` 不包含任何 ComM 类型字段。对于 Vector / MICROSAR 项目，需要在 `project/vector/CommPolicy_VectorCfg.c` 中单独配置绑定表：
+
+```c
+typedef struct
+{
+    CommPolicy_LogicalChannelIdType logicalChannel;
+    ComM_UserHandleType             commUser;
+    NetworkHandleType               networkHandle;
+} CommPolicy_VectorChannelBindingType;
+
+const CommPolicy_VectorChannelBindingType CommPolicy_VectorChannelBindingTable[COMM_POLICY_CH_NUM] =
+{
+    { 0u, ComMConf_ComMUser_CN_Backbone2_4e435fd4,     0u },
+    { 1u, ComMConf_ComMUser_CN_Backbone2_4e435fd4_RX,  1u },
+    /* ... */
+};
+```
+
+| 字段 | 说明 |
+|------|------|
+| `logicalChannel` | 逻辑通道 ID（与 `ChannelConfigTable` 对齐） |
+| `commUser` | ComM User Handle（Vector DaVinci 生成符号） |
+| `networkHandle` | Network Handle（Vector DaVinci 生成符号） |
+
+`CommPolicy_VectorAdapter.c` 在运行时会通过此绑定表将逻辑通道映射到具体的 ComM User，并将核心 `CommPolicy_CommModeType` 映射为 `ComM_ModeType` 后调用 `ComM_RequestComMode`。
 
 ## 如何配置 ActionSet
 
@@ -164,6 +188,6 @@ const CommPolicy_OutputActionSetType* const CommPolicy_FallbackActionSet = &Comm
 
 ## 如何接入 BSW
 
-1. 实现 `project/vector/CommPolicy_VectorAdapter.c` 中的 TODO
+1. **Vector 项目**：确认 `project/vector/CommPolicy_VectorCfg.c` 中的 `CommPolicy_VectorChannelBindingTable` 已正确填写 ComM User 和 Network Handle。
 2. 将 `Com_IpduGroupStart/Stop`、`Nm_Enable/DisableCommunication` 迁移到 BswM ActionList
 3. 在 BswM Rule 中引用 `CommPolicyCoordinator` 输出的 `modeRequestId`（如果需要）

@@ -38,16 +38,16 @@ STATIC void Policy_BuildDecisionFromActionSet(
         /* Evaluate ComM mode: fullComMask takes priority over noComMask */
         if (CommPolicy_ChannelMask_IsSet(&actionSet->fullComMask, ch) == TRUE)
         {
-            decision->targetComMode[ch] = COMM_FULL_COMMUNICATION;
+            decision->targetComMode[ch] = COMM_POLICY_FULL_COMMUNICATION;
         }
         else if (CommPolicy_ChannelMask_IsSet(&actionSet->noComMask, ch) == TRUE)
         {
-            decision->targetComMode[ch] = COMM_NO_COMMUNICATION;
+            decision->targetComMode[ch] = COMM_POLICY_NO_COMMUNICATION;
         }
         else
         {
             /* Default safe state if neither mask is set: NO_COMMUNICATION */
-            decision->targetComMode[ch] = COMM_NO_COMMUNICATION;
+            decision->targetComMode[ch] = COMM_POLICY_NO_COMMUNICATION;
         }
 
         /* Evaluate Tx gate: txUnblockMask takes priority over txBlockMask */
@@ -82,7 +82,7 @@ STATIC void Policy_ApplyFallback(CommPolicy_OutputDecisionType* decision)
         /* Ultimate safe fallback if config is broken: all FULL */
         for (ch = 0u; ch < COMM_POLICY_CH_NUM; ch++)
         {
-            decision->targetComMode[ch] = COMM_FULL_COMMUNICATION;
+            decision->targetComMode[ch] = COMM_POLICY_FULL_COMMUNICATION;
             decision->targetTxGate[ch] = COMM_POLICY_TX_UNBLOCK;
         }
         decision->modeRequestId = COMM_POLICY_MODE_REQUEST_NONE;

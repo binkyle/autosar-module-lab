@@ -23,9 +23,9 @@ void CommPolicy_State_Init(void)
 
     for (ch = 0u; ch < COMM_POLICY_CH_NUM; ch++)
     {
-        CommPolicy_State.lastDecision.targetComMode[ch] = COMM_NO_COMMUNICATION;
+        CommPolicy_State.lastDecision.targetComMode[ch] = COMM_POLICY_NO_COMMUNICATION;
         CommPolicy_State.lastDecision.targetTxGate[ch] = COMM_POLICY_TX_BLOCK;
-        CommPolicy_State.lastAppliedMode[ch] = COMM_NO_COMMUNICATION;
+        CommPolicy_State.lastAppliedMode[ch] = COMM_POLICY_NO_COMMUNICATION;
     }
 
     CommPolicy_State.lastDecision.modeRequestId = COMM_POLICY_MODE_REQUEST_NONE;

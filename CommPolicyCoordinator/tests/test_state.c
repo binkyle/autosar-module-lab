@@ -19,9 +19,9 @@ void test_state_init_default(void)
 
     for (ch = 0u; ch < COMM_POLICY_CH_NUM; ch++)
     {
-        TEST_ASSERT_EQUAL_HEX8(COMM_NO_COMMUNICATION, state->lastDecision.targetComMode[ch]);
+        TEST_ASSERT_EQUAL_HEX8(COMM_POLICY_NO_COMMUNICATION, state->lastDecision.targetComMode[ch]);
         TEST_ASSERT_EQUAL_HEX8(COMM_POLICY_TX_BLOCK, state->lastDecision.targetTxGate[ch]);
-        TEST_ASSERT_EQUAL_HEX8(COMM_NO_COMMUNICATION, state->lastAppliedMode[ch]);
+        TEST_ASSERT_EQUAL_HEX8(COMM_POLICY_NO_COMMUNICATION, state->lastAppliedMode[ch]);
     }
 }
 

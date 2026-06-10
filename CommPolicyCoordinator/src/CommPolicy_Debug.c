@@ -22,7 +22,7 @@ void CommPolicy_Debug_Init(void)
 
     for (ch = 0u; ch < COMM_POLICY_CH_NUM; ch++)
     {
-        CommPolicy_DebugState.lastDecision.targetComMode[ch] = COMM_NO_COMMUNICATION;
+        CommPolicy_DebugState.lastDecision.targetComMode[ch] = COMM_POLICY_NO_COMMUNICATION;
         CommPolicy_DebugState.lastDecision.targetTxGate[ch] = COMM_POLICY_TX_BLOCK;
     }
     CommPolicy_DebugState.lastDecision.modeRequestId = COMM_POLICY_MODE_REQUEST_NONE;

@@ -10,14 +10,14 @@ extern "C" {
 
 /* --- Abstract Adapter Interface (project must implement) ---------------- */
 
-/* Per-channel ComM operations (used by ApplyDecision implementation) */
+/* Per-channel communication mode operations (used by ApplyDecision implementation) */
 extern Std_ReturnType CommPolicy_Adapter_GetComMode(
     CommPolicy_LogicalChannelIdType ch,
-    ComM_ModeType* mode);
+    CommPolicy_CommModeType* mode);
 
 extern Std_ReturnType CommPolicy_Adapter_RequestComMode(
     CommPolicy_LogicalChannelIdType ch,
-    ComM_ModeType mode);
+    CommPolicy_CommModeType mode);
 
 extern Std_ReturnType CommPolicy_Adapter_RequestMode(
     CommPolicy_ModeRequestIdType modeRequestId);
