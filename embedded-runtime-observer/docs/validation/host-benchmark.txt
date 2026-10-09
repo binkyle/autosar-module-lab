@@ -1,0 +1,3 @@
+sizeof(core)=11144 sizeof(snapshot)=3648 trace_capacity=64 depth=8
+poll_task: samples=200000 raw_average_ns=27.93 timer_pair_baseline_ns=22.95 max_observed_ns=57797
+poll_nested: samples=200000 raw_average_ns=39.38 timer_pair_baseline_ns=24.70 max_observed_ns=148333
