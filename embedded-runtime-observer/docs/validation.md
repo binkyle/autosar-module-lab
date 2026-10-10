@@ -26,7 +26,10 @@ Local CMake, Clang, and cppcheck binaries were unavailable. Make/GCC performed a
 the published source archive subsequently passed the executed
 [GCC/Clang × Trace 0/64 workflow](https://github.com/binkyle/binkyle.github.io/actions/runs/37914920526).
 Each matrix job passed 8 CTest entries with ASan/UBSan; a fifth job passed cppcheck 2.13.0 and GCC -fanalyzer.
-The nested module workflow remains a template for standalone use, rather than active monorepo CI.
+This is the frozen time-release record. v0.2.0 adds active repository-root CI and
+records full time regression plus new stack validation in
+[stack-validation.md](validation/stack-validation.md). The nested module workflow remains
+a standalone template.
 
 ## Reproduction
 

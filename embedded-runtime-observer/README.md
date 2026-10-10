@@ -1,12 +1,12 @@
 # embedded-runtime-observer
 
-A small, caller-owned C99 engine for observing per-core Task, Idle, ISR, and function CPU time.
-It runs without an RTOS, MCU SDK, heap, or tracing GUI. [中文](README_zh-CN.md)
+A small, caller-owned C99 toolkit for per-core execution time and historical stack usage.
+The time engine and Stack Observer run independently, without an RTOS, MCU SDK or heap.
+[中文](README_zh-CN.md)
 
-An Idle interval interrupted by an ISR is not entirely idle. A task-switch timer can also straddle
-a reporting boundary, while nested IRQ totals can accidentally count the same physical time twice.
-This library makes those ownership rules explicit: a per-core execution stack, exclusive CPU
-categories, and fixed-window accounting driven by periodic polls as well as transitions.
+The time engine assigns each interval to Task, Idle, ISR or Kernel, preserves nested execution
+contexts, and closes fixed windows through periodic polls and transitions. Stack Observer adds
+effective capacity, observed peak, remaining headroom, warnings and optional boundary guards.
 
 ```mermaid
 flowchart TD
@@ -16,6 +16,9 @@ flowchart TD
   C --> E[Optional event ring]
   D --> F[Copied snapshots]
   E --> G[Host JSON export]
+  H[Owned memory or OS query] --> I[Independent Stack Observer]
+  I --> J[Peak capacity guard and warning]
+  J --> F
 ```
 
 ## Run in a minute
@@ -28,12 +31,15 @@ git clone https://github.com/binkyle/autosar-module-lab.git
 cd autosar-module-lab/embedded-runtime-observer
 make test
 ./build/benchmark
+./build/stack_simulator
 ```
 
 `basic` prints `Task=20 Idle=70 ISR=10 Total=100 Load=30.0%`.
 The suite passes **37 contract scenarios**, **4 Python tool tests**, 100,000 randomized transitions
 against an independent tick oracle, two simulated cores with two concurrent snapshot readers,
-and five runnable examples. See [validation details](docs/validation.md).
+and five time examples. Stack Observer adds **39 contract scenarios**, 8,000 byte-oracle
+operations, 200,000 serialized concurrent operations and two examples.
+See [time validation](docs/validation.md) and [stack validation](docs/validation/stack-validation.md).
 
 An equivalent CMake configuration is provided for CI and development:
 
@@ -42,6 +48,20 @@ cmake -S . -B build-cmake -DRTM_SANITIZE=ON
 cmake --build build-cmake --parallel
 ctest --test-dir build-cmake --output-on-failure
 ```
+
+Build only Stack Observer, or retain the original time-only configuration:
+
+```sh
+cmake -S . -B build-stack -DRTM_BUILD_RUNTIME=OFF
+cmake --build build-stack --parallel
+ctest --test-dir build-stack --output-on-failure
+make stack-test                 # Host stack tests and examples only
+make RTM_BUILD_STACK=0 test      # Original time engine only
+make stack-benchmark
+```
+
+For a library-only target build, also set `-DBUILD_TESTING=OFF -DRTM_BUILD_EXAMPLES=OFF`.
+The `rtm_stack` library has no Trace, time-engine, pthread or POSIX dependency.
 
 ## Smallest example
 
@@ -75,13 +95,16 @@ low-counter sample. A 64-bit window can span multiple low-32 wraps when sampling
 
 ## Scope and footprint
 
-| Capability | v0.1.0 |
+| Capability | v0.2.0 |
 |---|---|
 | Portable online engine, nested IRQs/functions, fixed windows | Host verified |
 | Same-object concurrent access | Caller serialization; mutex simulation tested with ThreadSanitizer |
 | Bare metal and AUTOSAR | Explicit interfaces and runnable mocks |
 | TC397 / MICROSAR / TASKING | **Experimental / Unverified**; no vendor build/hardware results |
 | Trace | Optional bounded FIFO; explicit drops; Host CSV→Perfetto instant-event JSON |
+| Stack painting / watermark / peak / guard | Independent C99 library; down/up growth; 1/2/4/8-byte cells; Host verified |
+| OS stack observation | Authorized query callback; unit normalization; AUTOSAR mock verified |
+| Current SP usage / CSA observation | Unsupported / future separate module |
 | CTF / BTF / globally synchronized multicore snapshots | Not implemented |
 | Task migration, inferred activations, automatic WCET certification | Not implemented |
 
@@ -91,15 +114,58 @@ unit. No hook allocates, blocks, transports, or prints; cost is bounded by compi
 Host sizes/timings do not establish TC397 RAM/ROM/WCET. Incomplete ISR coverage produces an observed
 load estimate, even if the accounting equation holds perfectly.
 
+## Stack Measurement
+
+An application-owned, offline region can be painted and scanned from its deepest usable end.
+The first changed cell defines an observed high-water mark; later measurements retain the maximum
+within that paint epoch. Effective capacity excludes both reserves and the optional guard.
+Remaining capacity is `capacity - peak`, and the percentage uses this effective capacity.
+
+```c
+#include "rtm/stack.h"
+#include <string.h>
+static unsigned char memory[2052]; /* Synthetic region, not the executing stack. */
+static rtm_stack_t observer;
+rtm_stack_region_t region = {0};
+rtm_stack_usage_t usage;
+region.memory = memory;
+region.region_bytes = sizeof(memory);
+region.cell_bytes = region.guard_bytes = 4;
+memset(region.fill_pattern, 0xaa, sizeof(region.fill_pattern));
+memset(region.guard_pattern, 0xde, sizeof(region.guard_pattern));
+/* Zero defaults select application ownership and downward growth. */
+if (rtm_stack_init(&observer, &region) != RTM_STACK_OK) return 1;
+if (rtm_stack_paint(&observer) != RTM_STACK_OK) return 2;
+memset(memory + 4 + 2048 - 640, 0x55, 640); /* Simulated usage. */
+if (rtm_stack_measure(&observer, &usage) != RTM_STACK_OK) return 3;
+/* capacity=2048 B, peak=640 B, remaining=1408 B, usage=31.25% */
+```
+
+`rtm_stack_snapshot` copies the cached sample. `current_status` is explicitly unsupported:
+watermark peak does not describe the current SP. Pattern collisions and untouched reservations
+can hide real depth. Guard checking reports boundary evidence; it neither prevents overflow nor
+certifies safety. Serialize every object access and buffer write; scan only quiescent memory.
+
+OS-managed regions contain no memory pointer and use only a permitted OS callback. Painting
+returns unsupported; an absent OS query does too. The optional adapter normalizes used-byte peaks
+or minimum-free words. Vendor IDs, core permissions, startup and legal query contexts belong to
+the platform wrapper. Run scans and potentially blocking remote queries in a suitable report task.
+
+See the [API guide](docs/stack-observer.md), [simulator](examples/stack_simulator.c),
+[AUTOSAR mock](examples/stack_autosar_concept.c) and [TC397 study](docs/cases/tc397-autosar-stack-study.md).
+Real MICROSAR/TASKING/TC397 builds, hardware measurements and CSA remain unverified.
+
 ## Port and explore
 
 - [Integration contracts](ports/README.md), [AUTOSAR/TC397 case](docs/cases/tc397-autosar-runtime-measurement-study.md)
 - [Architecture](docs/architecture/contracts.md), [official framework comparison](docs/research/open-source-framework-review.md)
+- [Documentation index](docs/README.md), [example index](examples/README.md), [roadmap](docs/roadmap.md)
 - [Trace export](tools/trace_to_json.py), [read-only local evidence collector](tools/collect_case_evidence.py)
 - [Contributing](CONTRIBUTING.md), [MIT license](LICENSE)
 
 This is an online measurement core, complementary to full RTOS trace recorders and Host tools.
 Use a mature recorder if its existing port and GUI meet your needs; no third-party implementation
 is bundled here. Source: [autosar-module-lab/embedded-runtime-observer](https://github.com/binkyle/autosar-module-lab/tree/main/embedded-runtime-observer).
-See [release status](docs/release-status.md) for module distribution and the standalone CI template.
+See [release status](docs/release-status.md) and the active
+[module CI](https://github.com/binkyle/autosar-module-lab/actions/workflows/embedded-runtime-observer.yml).
 Read the [Runtime Measurement series](https://binkyle.github.io/blog/Autosar/RuntimeMeasurement/) for the time model, design, and AUTOSAR integration walkthrough.

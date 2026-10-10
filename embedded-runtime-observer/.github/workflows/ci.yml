@@ -6,20 +6,41 @@ jobs:
   contracts:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         compiler: [gcc, clang]
         trace: [0, 64]
+        stack: ['ON', 'OFF']
     steps:
       - uses: actions/checkout@v4
-      - run: cmake -S . -B build -DCMAKE_C_COMPILER=${{ matrix.compiler }} -DRTM_TRACE_CAPACITY=${{ matrix.trace }} -DRTM_SANITIZE=ON
+      - run: cmake -S . -B build -DCMAKE_C_COMPILER=${{ matrix.compiler }} -DRTM_TRACE_CAPACITY=${{ matrix.trace }} -DRTM_BUILD_STACK=${{ matrix.stack }} -DRTM_SANITIZE=ON
       - run: cmake --build build --parallel
       - run: ctest --test-dir build --output-on-failure
+  stack-only:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cmake -S . -B build -DRTM_BUILD_RUNTIME=OFF -DRTM_BUILD_STACK=ON -DRTM_SANITIZE=ON
+      - run: cmake --build build --parallel
+      - run: ctest --test-dir build --output-on-failure
+      - run: cmake -S . -B build-library -DRTM_BUILD_RUNTIME=OFF -DRTM_BUILD_EXAMPLES=OFF -DBUILD_TESTING=OFF
+      - run: cmake --build build-library --parallel
   analysis:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - run: sudo apt-get update && sudo apt-get install -y cppcheck
       - run: python3 tools/check_format.py
-      - run: cppcheck --enable=warning,performance,portability --error-exitcode=1 --std=c99 -Iinclude src
-      - run: gcc -std=c99 -Wall -Wextra -Werror -fanalyzer -Iinclude -c src/rtm.c src/port.c
+      - run: cppcheck --enable=warning,performance,portability --error-exitcode=1 --std=c99 -Iinclude src ports
+      - run: gcc -std=c99 -Wall -Wextra -Werror -fanalyzer -Iinclude -c src/rtm.c src/port.c src/stack.c ports/stack_os.c
       - run: python3 tests/test_tools.py
+  benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: make build/stack_benchmark
+      - run: ./build/stack_benchmark > stack-benchmark.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stack-host-benchmark
+          path: stack-benchmark.txt

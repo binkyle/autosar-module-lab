@@ -1,0 +1,135 @@
+Host C99 normal full regression — 2026-10-10
+Command: make test
+cc -Iinclude -O2 -std=c99 -Wall -Wextra -Wpedantic -Werror examples/autosar_concept.c src/rtm.c src/port.c -o build/autosar_concept
+cc -Iinclude -O2 -std=c99 -Wall -Wextra -Wpedantic -Werror examples/baremetal.c ports/stm_low32.c src/rtm.c src/port.c -o build/baremetal
+cc -Iinclude -O2 -std=c99 -Wall -Wextra -Wpedantic -Werror tools/benchmark.c src/rtm.c src/port.c -o build/benchmark
+build/rtm_tests
+PASS all_idle
+PASS all_task
+PASS thirty_percent
+PASS isr_preempts_idle
+PASS isr_preempts_task
+PASS nested_isr
+PASS recursive_isr
+PASS idle_isr_task
+PASS task_isr_idle
+PASS idle_crosses_windows
+PASS task_crosses_windows
+PASS isr_crosses_windows
+PASS split_at_boundary
+PASS timer_wrap
+PASS multiple_wraps
+PASS sixty_second_window
+PASS clock_gap_fault
+PASS backward_clock_fault
+PASS nested_points
+PASS recursive_points
+PASS points_survive_preemption
+PASS points_survive_task_block
+PASS point_mismatch
+PASS missing_begin
+PASS unclosed_isr_point
+PASS isr_mismatch
+PASS depth_overflow
+PASS bad_identifiers
+PASS illegal_isr_task_switch
+PASS kernel_accounting
+PASS empty_and_repeated_snapshot
+PASS reset_recovers
+PASS counter_overflow
+PASS trace_loss
+PASS bad_config
+PASS port_ordering
+PASS random_conservation
+37 contract scenarios passed
+build/rtm_concurrent_tests
+PASS 2 owner cores, 2 concurrent snapshot readers, 200000 serialized operations
+build/basic
+Task=20 Idle=70 ISR=10 Total=100 Load=30.0%
+build/task_isr
+ISR_A inclusive=40 exclusive=30; Load=80.0%
+core,tick,sequence,kind,id,value
+0,10,0,1,0,0
+0,20,1,1,1,0
+0,30,2,2,1,0
+0,50,3,2,0,0
+0,50,4,0,0,0
+0,50,5,3,0,0
+0,90,6,4,0,0
+0,90,7,0,65535,0
+build/multicore
+Core 0: 0.0%
+Core 1: 100.0%
+build/autosar_concept
+Mock hooks: task=30 kernel=4 ISR=10 idle=56 load=44.0%
+build/baremetal
+Bare-metal mock register: load=30.0%
+python3 tests/test_tools.py
+....
+----------------------------------------------------------------------
+Ran 4 tests in 0.002s
+
+OK
+cc -Iinclude -O2 -std=c99 -Wall -Wextra -Wpedantic -Werror tests/test_stack.c src/stack.c ports/stack_os.c -o build/stack_tests
+cc -Iinclude -O2 -std=c99 -Wall -Wextra -Wpedantic -Werror tests/test_stack_concurrent.c src/stack.c ports/stack_os.c -pthread -o build/stack_concurrent_tests
+cc -Iinclude -O2 -std=c99 -Wall -Wextra -Wpedantic -Werror examples/stack_simulator.c src/stack.c ports/stack_os.c -o build/stack_simulator
+cc -Iinclude -O2 -std=c99 -Wall -Wextra -Wpedantic -Werror examples/stack_autosar_concept.c src/stack.c ports/stack_os.c -o build/stack_autosar_concept
+cc -Iinclude -O2 -std=c99 -Wall -Wextra -Wpedantic -Werror tools/stack_benchmark.c src/stack.c ports/stack_os.c -o build/stack_benchmark
+build/stack_tests
+PASS all_painted
+PASS partial_640_of_2048
+PASS fully_used_early_exit
+PASS sp_retreat_keeps_watermark
+PASS observed_peak_survives_restoration
+PASS painting_new_epoch
+PASS 1_2_8_16_kib
+PASS upward_growth
+PASS 1_2_4_8_byte_cells
+PASS custom_pattern
+PASS unaligned_byte_access
+PASS reserved_bytes_untouched
+PASS guard_damage
+PASS upward_guard
+PASS guard_disabled
+PASS warning_threshold
+PASS invalid_regions_zero_reserves
+PASS invalid_cell_sizes
+PASS invalid_options
+PASS address_wrap_rejected
+PASS null_unpainted
+PASS matching_pattern_limitation
+PASS nonmonotonic_paint_holes
+PASS partial_cell_boundaries
+PASS cached_snapshot
+PASS os_managed_readonly
+PASS os_api_unsupported
+PASS os_memory_rejected
+PASS os_range_capacity_mismatch
+PASS os_failure_retains_invalid_diagnostics
+PASS os_guard_states
+PASS os_used_free_unit_conversion
+PASS os_unit_overflow
+PASS large_capacity_percent
+PASS independent_regions
+PASS shared_stack_aliases
+PASS rebind_config
+PASS epoch_overflow
+PASS randomized_byte_oracle_8000
+39 stack contract scenarios passed
+build/stack_concurrent_tests
+PASS stack: 2 regions, 2 writers, 2 readers, 200000 serialized operations
+build/stack_simulator
+Simulated Stack Capacity : 2048 B
+Peak Usage : 640 B
+Remaining : 1408 B
+Usage : 31.25%
+After simulated SP retreat: peak=640 B, current=unsupported, guard=intact
+Independent region: peak=0 B
+Synthetic guard damage: detected, valid=0
+build/stack_autosar_concept
+Mock OS task stack: capacity=2048 peak=640 remaining=1408 usage=31.25%
+Mock shared ISR stack: core=0 users=2 peak=128 usage=12.50%
+OS query unavailable: valid=0; no stack memory read or painting
+
+exit_code=0
+
