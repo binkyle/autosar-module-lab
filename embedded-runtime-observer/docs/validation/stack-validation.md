@@ -32,7 +32,7 @@ actual SP depth and CSA are not verified by these tests.
 LeakSanitizer cannot inspect process tasks in the local ptraced environment. The completed
 ASan/UBSan run used `ASAN_OPTIONS=detect_leaks=0`; no passed leak check is claimed. Hosted
 CI retains normal sanitizer settings. Local Clang, CMake and cppcheck are unavailable, so
-their actual results must come from the active GitHub workflow rather than a local claim.
+their results are established by the executed GitHub workflow below.
 
 Raw records: [normal suite](stack-host-tests.txt), [ASan/UBSan](stack-sanitize-tests.txt),
 [optional builds](stack-optional-builds.txt), [benchmark](stack-host-benchmark.txt).
@@ -84,6 +84,14 @@ benchmark. Stack ON has 12 CTest entries, Stack OFF 8, and Stack-only 4. Workflo
 and its per-job result are visible in
 [GitHub Actions](https://github.com/binkyle/autosar-module-lab/actions/workflows/embedded-runtime-observer.yml).
 The nested module workflow is only a standalone template.
+
+The published implementation commit `0085a5e0d6306bde711d1abceb7612744cf52e8e` passed
+[run 38021378315](https://github.com/binkyle/autosar-module-lab/actions/runs/38021378315):
+all 11 jobs succeeded. All eight compiler/Trace/Stack combinations passed their CTest
+suites under ASan/UBSan; Stack-only passed 4/4 tests and the library-only build succeeded.
+cppcheck 2.13.0, GCC analysis and Python tools succeeded, and the benchmark artifact
+was uploaded. Clang logs identify version 18.1.3. This is hosted execution evidence,
+not a claim of local Clang/CMake availability.
 
 ```sh
 make test
