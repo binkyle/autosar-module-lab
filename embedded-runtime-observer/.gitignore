@@ -2,3 +2,5 @@
 *.o
 __pycache__/
 *.pyc
+local-evidence/
+*.case-evidence.md

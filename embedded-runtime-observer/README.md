@@ -160,7 +160,7 @@ Real MICROSAR/TASKING/TC397 builds, hardware measurements and CSA remain unverif
 - [Integration contracts](ports/README.md), [AUTOSAR/TC397 case](docs/cases/tc397-autosar-runtime-measurement-study.md)
 - [Architecture](docs/architecture/contracts.md), [official framework comparison](docs/research/open-source-framework-review.md)
 - [Documentation index](docs/README.md), [example index](examples/README.md), [roadmap](docs/roadmap.md)
-- [Trace export](tools/trace_to_json.py), [read-only local evidence collector](tools/collect_case_evidence.py)
+- [Trace export](tools/trace_to_json.py), [read-only local evidence collector usage](tools/README.md)
 - [Contributing](CONTRIBUTING.md), [MIT license](LICENSE)
 
 This is an online measurement core, complementary to full RTOS trace recorders and Host tools.

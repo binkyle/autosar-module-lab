@@ -9,7 +9,7 @@
 | 输入线索 | 本次可证明的结论 | 真实工程仍需的证据 |
 |---|---|---|
 | ISR 时间可能计入 Idle | 若只结算跨越 ISR 的 Idle 区间，该算法会把中断误记为 Idle；数值模型已复现 | Idle/ISR 的实际 Hook 时序与扣减逻辑 |
-| `ISR_PREEMPTED` 未启用 | 未核实，不能作事实发布 | 宏定义、构建选项、预处理结果 |
+| ISR 抢占处理配置 | 未核实，不能作事实发布 | 相关宏定义、构建选项、预处理结果 |
 | ISR Hook 数组索引错误 | 未核实 | 数组声明、Core/Task/ISR ID 映射及每个读写表达式 |
 | ISR 嵌套无状态保存 | 单一开始时间不能表示多个活动 ISR；通用栈模型已验证 | 实际状态字段、嵌套配置和入口顺序 |
 | Idle 依赖 PostTaskHook | 仅延迟结算会把窗口截断前的活跃 Idle 漏记；模型已验证 | 周期结算实现、Hook 与窗口边界的关系 |
@@ -63,9 +63,11 @@ Infineon 的[官方说明](https://community.infineon.com/t5/Knowledge-Base-Arti
 在可访问工程的机器运行：
 
 ```powershell
-python tools/collect_case_evidence.py "D:\work\ecu\host" --output "D:\reports\runtime-evidence.md"
+python tools/collect_case_evidence.py "D:\source\project" --target "src" --target "generated" --output "D:\local-evidence\runtime.case-evidence.md"
 ```
 
-路径是示意。脚本只读白名单源码及邻近调用文件，输出带 SHA-256 和行号的局部证据。输出必须位于业务工程外，已存在的输出会被拒绝。它不编译、不预处理、不修改业务工程，也不是完整审查器。沿每个调用点继续查宏、生成 RTM 表、ISR 包装、Idle 调度与全部统计写者后，才能将待核查项升级为源码事实。生成的专有源码摘录只用于本地审查，不直接发布。
+路径和目录名都是通用示例。用重复的 `--target` 指定工程内的相对文件或目录；目录只递归收集 C/C++ 源文件和头文件。默认匹配通用 Hook、RTM 和 Idle 名称；用重复的 `--pattern` 传入本地正则表达式时，将替换默认规则。脚本不内置业务工程结构或专用宏，详见[采集工具说明](../../tools/README.md)。
+
+输出带 SHA-256、相对路径、行号和局部源码，必须位于业务工程外，已存在的输出会被拒绝。采集只读取指定范围，不编译、不预处理、不修改业务工程，也不是完整审查器。沿每个调用点继续查宏、生成 RTM 表、ISR 包装、Idle 调度与全部统计写者后，才能将待核查项升级为源码事实。生成的专有源码摘录只用于本地审查，不直接发布；源码脱敏后的工具不会自动脱敏被采集的源码。
 
 硬件验证建议用可控制的 Task/IRQ 负载、GPIO/逻辑分析仪或独立计时进行对照，验证四种抢占链、窗口跨界、所有核、异常/溢出、最大 ISR 深度，以及 Hook/快照自身最坏开销。当前没有这些硬件结果。
